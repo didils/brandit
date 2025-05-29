@@ -50,7 +50,7 @@ export default function ConfirmEmailChange() {
                 Best regards,
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
-                The Supaplate Team
+                The Brandit Team
               </Text>
             </Section>
           </Container>

@@ -11,6 +11,7 @@ import {
 } from "@react-email/components";
 
 export default function Welcome({ profile }: { profile: string }) {
+  const parsed = JSON.parse(profile);
   return (
     <Tailwind>
       <Html>
@@ -19,15 +20,15 @@ export default function Welcome({ profile }: { profile: string }) {
           <Preview>Welcome to Supaplate</Preview>
           <Container className="mx-auto max-w-[560px] py-5 pb-12">
             <Heading className="pt-4 text-center text-2xl leading-tight font-normal tracking-[-0.5px] text-black">
-              Welcome to Supaplate
+              Welcome to Brandit!
             </Heading>
             <Section>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
                 This is an automated email sent to all users who have signed up
-                to Supaplate.
+                to Brandit.
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
-                To send this email we used Supabase Queues, Supabase CRON Jobs
+                To send this email we used Supabase Queues, Supabase CRON Jobs,
                 and Resend.
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
@@ -35,17 +36,17 @@ export default function Welcome({ profile }: { profile: string }) {
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
                 <code className="py-2font-mono mx-auto inline-block rounded bg-[#dfe1e4] px-1 font-bold tracking-[-0.3px] text-black">
-                  {profile}
+                  {parsed.email}
                 </code>
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
-                We are appy to have you on board!
+                We are happy to have you on board!
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
                 Best regards,
               </Text>
               <Text className="mb-4 text-[15px] leading-relaxed text-black">
-                The Supaplate Team
+                The Brandit Team
               </Text>
             </Section>
           </Container>

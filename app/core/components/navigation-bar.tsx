@@ -18,11 +18,24 @@
  */
 import { CogIcon, HomeIcon, LogOutIcon, MenuIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, Links } from "react-router";
+
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuIndicator,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuViewport,
+  navigationMenuTriggerStyle,
+} from "~/core/components/ui/navigation-menu";
 
 import LangSwitcher from "./lang-switcher";
 import ThemeSwitcher from "./theme-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -43,17 +56,17 @@ import {
 
 /**
  * UserMenu Component
- * 
+ *
  * Displays the authenticated user's profile menu with avatar and dropdown options.
  * This component is shown in the navigation bar when a user is logged in and provides
  * quick access to user-specific actions and information.
- * 
+ *
  * Features:
  * - Avatar display with image or fallback initials
  * - User name and email display
  * - Quick navigation to dashboard
  * - Logout functionality
- * 
+ *
  * @param name - The user's display name
  * @param email - The user's email address (optional)
  * @param avatarUrl - URL to the user's avatar image (optional)
@@ -77,7 +90,7 @@ function UserMenu({
           <AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      
+
       {/* Dropdown content with user info and actions */}
       <DropdownMenuContent className="w-56">
         {/* User information display */}
@@ -86,7 +99,7 @@ function UserMenu({
           <span className="truncate text-xs">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {/* Dashboard link */}
         <DropdownMenuItem asChild>
           <SheetClose asChild>
@@ -96,7 +109,7 @@ function UserMenu({
             </Link>
           </SheetClose>
         </DropdownMenuItem>
-        
+
         {/* Logout link */}
         <DropdownMenuItem asChild>
           <SheetClose asChild>
@@ -113,17 +126,17 @@ function UserMenu({
 
 /**
  * AuthButtons Component
- * 
+ *
  * Displays authentication buttons (Sign in and Sign up) for unauthenticated users.
  * This component is shown in the navigation bar when no user is logged in and provides
  * quick access to authentication screens.
- * 
+ *
  * Features:
  * - Sign in button with ghost styling (less prominent)
  * - Sign up button with default styling (more prominent)
  * - View transitions for smooth navigation to auth screens
  * - Compatible with mobile navigation drawer (SheetClose integration)
- * 
+ *
  * @returns Fragment containing sign in and sign up buttons
  */
 function AuthButtons() {
@@ -137,7 +150,7 @@ function AuthButtons() {
           </Link>
         </SheetClose>
       </Button>
-      
+
       {/* Sign up button (more prominent) */}
       <Button variant="default" asChild>
         <SheetClose asChild>
@@ -152,15 +165,15 @@ function AuthButtons() {
 
 /**
  * Actions Component
- * 
+ *
  * Displays utility actions and settings in the navigation bar, including:
  * - Debug/settings dropdown menu with links to monitoring tools
  * - Theme switcher for toggling between light and dark mode
  * - Language switcher for changing the application language
- * 
+ *
  * This component is shown in the navigation bar for all users regardless of
  * authentication state and provides access to application-wide settings and tools.
- * 
+ *
  * @returns Fragment containing settings dropdown, theme switcher, and language switcher
  */
 function Actions() {
@@ -192,10 +205,10 @@ function Actions() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       {/* Theme switcher component (light/dark mode) */}
       <ThemeSwitcher />
-      
+
       {/* Language switcher component */}
       <LangSwitcher />
     </>
@@ -204,11 +217,11 @@ function Actions() {
 
 /**
  * NavigationBar Component
- * 
+ *
  * The main navigation header for the application that adapts to different screen sizes
  * and user authentication states. This component serves as the primary navigation
  * interface and combines several sub-components to create a complete navigation experience.
- * 
+ *
  * Features:
  * - Responsive design with desktop navigation and mobile drawer
  * - Application branding with localized title
@@ -217,13 +230,71 @@ function Actions() {
  * - User profile menu with avatar for authenticated users
  * - Sign in/sign up buttons for unauthenticated users
  * - Theme and language switching options
- * 
+ *
  * @param name - The authenticated user's name (if available)
  * @param email - The authenticated user's email (if available)
  * @param avatarUrl - The authenticated user's avatar URL (if available)
  * @param loading - Boolean indicating if the auth state is still loading
  * @returns The complete navigation bar component
  */
+
+const menus = [
+  // {
+  //   name: "Services",
+  //   to: "/services",
+  //   items: [
+  //     {
+  //       name: "Patent application",
+  //       description: "File a patent application in Korea",
+  //       to: "/services/patent-application",
+  //     },
+  //     {
+  //       name: "Trademark application",
+  //       description: "File a trademark application in Korea",
+  //       to: "/services/trademark-application",
+  //     },
+  //     {
+  //       name: "Design application",
+  //       description: "File a design application in Korea",
+  //       to: "/services/design-application",
+  //     },
+  //   ],
+  // },
+  {
+    name: "Pricing",
+    to: "/pricing",
+  },
+  {
+    name: "Consulting",
+    to: "/consulting",
+  },
+  {
+    name: "Maintenance",
+    to: "/maintenance",
+    items: [
+      {
+        name: "Annuity management",
+        description: "Manage your annuities",
+        to: "/maintenance/annuity-management",
+      },
+      {
+        name: "Trademark renewal",
+        description: "Renew your trademarks",
+        to: "/maintenance/trademark-renewal",
+      },
+      {
+        name: "Transfer In",
+        description: "Transfer your patents, trademarks, and designs to us",
+        to: "/maintenance/transfer-in",
+      },
+    ],
+  },
+  {
+    name: "Blog",
+    to: "/blog",
+  },
+];
+
 export function NavigationBar({
   name,
   email,
@@ -237,23 +308,25 @@ export function NavigationBar({
 }) {
   // Get translation function for internationalization
   const { t } = useTranslation();
-  
+
   return (
     <nav
       className={
-        "mx-auto flex h-16 w-full items-center justify-between border-b px-5 shadow-xs backdrop-blur-lg transition-opacity md:px-10"
+        "bg-background mx-auto flex h-16 w-full items-center justify-between border-b px-5 shadow-xs backdrop-blur-lg transition-opacity md:px-10"
       }
     >
       <div className="mx-auto flex h-full w-full max-w-screen-2xl items-center justify-between py-3">
         {/* Application logo/title with link to home */}
         <Link to="/">
-          <h1 className="text-lg font-extrabold">{t("home.title")}</h1>
+          <h1 className="text-primary text-lg font-extrabold">
+            {t("home.title")}
+          </h1>
         </Link>
-        
+
         {/* Desktop navigation menu (hidden on mobile) */}
         <div className="hidden h-full items-center gap-5 md:flex">
           {/* Main navigation links */}
-          <Link
+          {/* <Link
             to="/blog"
             viewTransition
             className="text-muted-foreground hover:text-foreground text-sm transition-colors"
@@ -273,15 +346,112 @@ export function NavigationBar({
             className="text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             Payments
-          </Link>
-          
+          </Link> */}
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link to="/services" viewTransition>
+                  <NavigationMenuTrigger>Services</NavigationMenuTrigger>
+                </Link>
+                <NavigationMenuContent>
+                  <ul className="grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md"
+                          href="/"
+                        >
+                          <Badge
+                            variant="outline"
+                            className="bg-background text-primary border-primary dark:bg-blue-600"
+                          >
+                            PCT
+                          </Badge>
+                          <div className="mt-4 mb-2 text-lg font-medium">
+                            <span>National Phase in Korea</span>
+                          </div>
+                          <p className="text-muted-foreground text-sm leading-tight">
+                            We help you file a PCT national phase application in
+                            Korea
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem
+                      href="/services/patent-application"
+                      title="Patent application"
+                    >
+                      We help you file a patent application in Korea
+                    </ListItem>
+                    <ListItem
+                      href="/services/trademark-application"
+                      title="Trademark application"
+                    >
+                      We help you file a trademark application in Korea
+                    </ListItem>
+                    <ListItem
+                      href="/services/design-application"
+                      title="Design application"
+                    >
+                      We help you file a design application in Korea
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              {menus.map((menu) => (
+                <NavigationMenuItem key={menu.name}>
+                  {menu.items ? (
+                    <>
+                      <Link to={menu.to} viewTransition>
+                        <NavigationMenuTrigger>
+                          {menu.name}
+                        </NavigationMenuTrigger>
+                      </Link>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[600px] grid-cols-2 gap-3 p-4 font-light">
+                          {menu.items?.map((item) => (
+                            <NavigationMenuItem
+                              key={item.name}
+                              className="focus:bg-accent/50 hover:bg-accent/50 rounded-md transition-colors select-none"
+                            >
+                              <NavigationMenuLink asChild>
+                                <Link
+                                  className="block space-y-1 p-3 leading-none no-underline outline-none"
+                                  to={item.to}
+                                >
+                                  <span className="text-sm leading-none font-medium">
+                                    {item.name}
+                                  </span>
+                                  <p className="text-muted-foreground text-sm">
+                                    {item.description}
+                                  </p>
+                                </Link>
+                              </NavigationMenuLink>
+                            </NavigationMenuItem>
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
+                    </>
+                  ) : (
+                    <Link
+                      className={navigationMenuTriggerStyle()}
+                      to={menu.to}
+                      viewTransition
+                    >
+                      {menu.name}
+                    </Link>
+                  )}
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
           <Separator orientation="vertical" />
-          
+
           {/* Settings, theme switcher, and language switcher */}
           <Actions />
-          
+
           <Separator orientation="vertical" />
-          
+
           {/* Conditional rendering based on authentication state */}
           {loading ? (
             // Loading state with skeleton placeholder
@@ -300,7 +470,7 @@ export function NavigationBar({
             </>
           )}
         </div>
-        
+
         {/* Mobile menu trigger (hidden on desktop) */}
         <SheetTrigger className="size-6 md:hidden">
           <MenuIcon />
@@ -347,5 +517,25 @@ export function NavigationBar({
         </SheetContent>
       </div>
     </nav>
+  );
+}
+
+function ListItem({
+  title,
+  children,
+  href,
+  ...props
+}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
+  return (
+    <li {...props}>
+      <NavigationMenuLink asChild>
+        <Link href={href}>
+          <div className="text-sm leading-none font-medium">{title}</div>
+          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+            {children}
+          </p>
+        </Link>
+      </NavigationMenuLink>
+    </li>
   );
 }

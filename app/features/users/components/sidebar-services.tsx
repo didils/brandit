@@ -24,10 +24,10 @@ import {
   useSidebar,
 } from "~/core/components/ui/sidebar";
 
-export default function SidebarProjects({
-  projects,
+export default function SidebarApplications({
+  applications,
 }: {
-  projects: {
+  applications: {
     name: string;
     url: string;
     icon: LucideIcon;
@@ -37,9 +37,9 @@ export default function SidebarProjects({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Patents</SidebarGroupLabel>
+      <SidebarGroupLabel>Applications</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {applications.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <Link to={item.url}>
@@ -77,11 +77,11 @@ export default function SidebarProjects({
           </SidebarMenuItem>
         ))}
         {/* <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem> */}
+            <SidebarMenuButton className="text-sidebar-foreground/70">
+              <MoreHorizontal className="text-sidebar-foreground/70" />
+              <span>More</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem> */}
       </SidebarMenu>
     </SidebarGroup>
   );

@@ -8,6 +8,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  integer,
   jsonb,
   pgEnum,
   pgPolicy,
@@ -34,8 +35,17 @@ export const patents = pgTable(
     status: text().notNull(), // 현재 상태
     application_type: text().notNull(), // 출원종류 (신규/분할/PCT 등)
 
+    // 🔹 사용자 연결 필드 (외래키)
+    user_id: uuid().references(() => authUsers.id, {
+      onDelete: "cascade",
+    }),
+
     // 🔸 선택 항목 (optional fields)
-    applicant_name: text(), // 출원인
+    // applicant_name: text(), // 출원인
+    applicant: jsonb().default(sql`'[]'::jsonb`), // 복수 출원인 [{name_kr, name_en, code, address_kr, address_en}]
+    assignee: jsonb().default(sql`'[]'::jsonb`), // 복수 권리자 [{name_kr, name_en, code, address_kr, address_en}]
+    inventor: jsonb().default(sql`'[]'::jsonb`), // 복수 발명자 [{name_kr, name_en, code, address_kr, address_en}]
+
     filing_date: timestamp(), // 출원일
     application_number: text(), // 출원번호
     title_kr: text(), // 국문명칭
@@ -63,22 +73,23 @@ export const patents = pgTable(
     late_registration_penalty_due: timestamp(), // 등록과태마감일
     protection_term: text(), // 권리존속기간
     is_annuity_managed: boolean(), // 연차관리 여부
-    inventor: text(), // 발명자
-    assignee: text(), // 권리자
+    // inventor: text(), // 발명자
+    // assignee: text(), // 권리자
     earliest_priority_date: timestamp(), // 최초 우선권 주장일
     expedited_examination_requested: boolean(), // 우선심사 청구 여부
-    expedited_examination_date: timestamp(), // 우심사청구일
+    expedited_examination_date: timestamp(), // 우선심사청구일
     examination_requested: yesNoEnum("examination_requested"), // 심사청구 여부
     priority_claimed: yesNoEnum("priority_claimed"), // 우선권 주장 여부
-    priority_rights: jsonb(), // 우선권 정보
+    priority_rights: jsonb().default(sql`'[]'::jsonb`), // 우선권 정보 [배열]]
+
+    electronic_certificate_selected: boolean().default(true),
+    country_code: text(),
+    prior_disclosure_exception_claimed: boolean().default(false),
+    prior_disclosure_documents: jsonb().default(sql`'[]'::jsonb`),
+    final_claim_count: integer(),
 
     // 🔸 메타데이터 (optional json field)
-    metadata: jsonb(),
-
-    // 🔹 사용자 연결 필드 (외래키)
-    user_id: uuid().references(() => authUsers.id, {
-      onDelete: "cascade",
-    }),
+    metadata: jsonb().default(sql`'{}'::jsonb`), // 객체
 
     // 🔹 생성일 및 수정일
     ...timestamps,
@@ -93,3 +104,31 @@ export const patents = pgTable(
     }),
   ],
 );
+
+export const entities = pgTable("entities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name_kr: text().notNull(),
+  name_en: text(),
+  client_code: text(),
+  address_kr: text(),
+  address_en: text(),
+});
+
+export const inventors = pgTable("inventors", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  user_id: uuid("user_id")
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+
+  name_kr: text().notNull(),
+  name_en: text(),
+  nationality: text(),
+  id_number: text(),
+  zipcode: text(),
+  address_kr: text(),
+  address_en: text(),
+  residence_country: text(),
+
+  ...timestamps,
+});

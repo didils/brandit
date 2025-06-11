@@ -24,10 +24,10 @@ import {
   useSidebar,
 } from "~/core/components/ui/sidebar";
 
-export default function SidebarProjects({
-  projects,
+export default function SidebarMarks({
+  marks,
 }: {
-  projects: {
+  marks: {
     name: string;
     url: string;
     icon: LucideIcon;
@@ -37,9 +37,9 @@ export default function SidebarProjects({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Patents</SidebarGroupLabel>
+      <SidebarGroupLabel>Trademarks | Designs</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {marks.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <Link to={item.url}>

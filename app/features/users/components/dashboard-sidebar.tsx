@@ -5,6 +5,9 @@ import {
   BriefcaseIcon,
   BuildingIcon,
   CommandIcon,
+  EarthIcon,
+  FilePenLineIcon,
+  FileSymlinkIcon,
   FrameIcon,
   GalleryVerticalEndIcon,
   HeartHandshakeIcon,
@@ -12,10 +15,12 @@ import {
   LineChartIcon,
   MapIcon,
   MegaphoneIcon,
+  PenToolIcon,
   PieChartIcon,
   RocketIcon,
   Settings2Icon,
   SquareTerminalIcon,
+  StampIcon,
   Target,
   UsersIcon,
 } from "lucide-react";
@@ -29,7 +34,9 @@ import {
 } from "~/core/components/ui/sidebar";
 
 import SidebarMain from "./sidebar-main";
+import SidebarMarks from "./sidebar-marks";
 import SidebarProjects from "./sidebar-projects";
+import SidebarApplications from "./sidebar-services";
 import TeamSwitcher from "./sidebar-team-switcher";
 import SidebarUser from "./sidebar-user";
 
@@ -51,104 +58,121 @@ const data = {
       plan: "Free",
     },
   ],
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: LayoutDashboardIcon,
-      isActive: true,
-      items: [
-        {
-          title: "Overview",
-          url: "/dashboard",
-        },
-        {
-          title: "Analytics",
-          url: "#",
-        },
-        {
-          title: "Reports",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Customers",
-      url: "#",
-      icon: UsersIcon,
-      items: [
-        {
-          title: "Contacts",
-          url: "#",
-        },
-        {
-          title: "Companies",
-          url: "#",
-        },
-        {
-          title: "Deals",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Sales",
-      url: "#",
-      icon: LineChartIcon,
-      items: [
-        {
-          title: "Pipeline",
-          url: "#",
-        },
-        {
-          title: "Opportunities",
-          url: "#",
-        },
-        {
-          title: "Quotes",
-          url: "#",
-        },
-        {
-          title: "Invoices",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2Icon,
-      items: [
-        {
-          title: "Workspace",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Integrations",
-          url: "#",
-        },
-      ],
-    },
-  ],
+  // navMain: [
+  //   {
+  //     title: "Dashboard",
+  //     url: "#",
+  //     icon: LayoutDashboardIcon,
+  //     isActive: true,
+  //     items: [
+  //       {
+  //         title: "Overview",
+  //         url: "/dashboard",
+  //       },
+  //       {
+  //         title: "Analytics",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Reports",
+  //         url: "#",
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Provisional Applications",
+  //     url: "#",
+  //     icon: UsersIcon,
+  //     items: [
+  //       {
+  //         title: "List",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Companies",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Deals",
+  //         url: "#",
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Sales",
+  //     url: "#",
+  //     icon: LineChartIcon,
+  //     items: [
+  //       {
+  //         title: "Pipeline",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Opportunities",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Quotes",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Invoices",
+  //         url: "#",
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Settings",
+  //     url: "#",
+  //     icon: Settings2Icon,
+  //     items: [
+  //       {
+  //         title: "Workspace",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Team",
+  //         url: "#",
+  //       },
+  //       {
+  //         title: "Integrations",
+  //         url: "#",
+  //       },
+  //     ],
+  //   },
+  // ],
   projects: [
     {
-      name: "Sales Team",
+      name: "Provisional Applications",
       url: "#",
-      icon: Target,
+      icon: FilePenLineIcon,
     },
     {
-      name: "Customer Success",
+      name: "National Phase",
       url: "#",
-      icon: HeartHandshakeIcon,
+      icon: FileSymlinkIcon,
+    },
+  ],
+  applications: [
+    {
+      name: "Provisional Applications",
+      url: "#",
+      icon: FilePenLineIcon,
     },
     {
-      name: "Marketing",
+      name: "National Phase Entry",
       url: "#",
-      icon: MegaphoneIcon,
+      icon: EarthIcon,
+    },
+    {
+      name: "Trademark Applications",
+      url: "#",
+      icon: StampIcon,
+    },
+    {
+      name: "Design Applications",
+      url: "#",
+      icon: PenToolIcon,
     },
   ],
 };
@@ -169,8 +193,10 @@ export default function DashboardSidebar({
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMain items={data.navMain} />
+        {/* <SidebarMain items={data.navMain} /> */}
+        <SidebarApplications applications={data.applications} />
         <SidebarProjects projects={data.projects} />
+        {/* <SidebarMarks marks={data.marks} /> */}
       </SidebarContent>
       <SidebarFooter>
         <SidebarUser

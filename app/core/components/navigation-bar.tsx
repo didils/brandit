@@ -240,23 +240,23 @@ function Actions() {
 
 const menus = [
   // {
-  //   name: "Services",
-  //   to: "/services",
+  //   name: "applications",
+  //   to: "/applications",
   //   items: [
   //     {
   //       name: "Patent application",
   //       description: "File a patent application in Korea",
-  //       to: "/services/patent-application",
+  //       to: "/applications/patent-application",
   //     },
   //     {
   //       name: "Trademark application",
   //       description: "File a trademark application in Korea",
-  //       to: "/services/trademark-application",
+  //       to: "/applications/trademark-application",
   //     },
   //     {
   //       name: "Design application",
   //       description: "File a design application in Korea",
-  //       to: "/services/design-application",
+  //       to: "/applications/design-application",
   //     },
   //   ],
   // },
@@ -274,17 +274,20 @@ const menus = [
     items: [
       {
         name: "Annuity management",
-        description: "Manage your annuities",
+        description:
+          "Keep your patents and designs in force. We handle all annuity payments and deadline tracking for you.",
         to: "/maintenance/annuity-management",
       },
       {
         name: "Trademark renewal",
-        description: "Renew your trademarks",
+        description:
+          "Never miss a renewal again. Our smart system tracks your trademark deadlines and handles the paperwork for you.",
         to: "/maintenance/trademark-renewal",
       },
       {
         name: "Transfer In",
-        description: "Transfer your patents, trademarks, and designs to us",
+        description:
+          "Already using another agent? Move your cases to our platform for unified management and clear visibility.",
         to: "/maintenance/transfer-in",
       },
     ],
@@ -350,50 +353,63 @@ export function NavigationBar({
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link to="/services" viewTransition>
-                  <NavigationMenuTrigger>Services</NavigationMenuTrigger>
+                <Link to="/applications" viewTransition>
+                  <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
                 </Link>
-                <NavigationMenuContent>
-                  <ul className="grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                <NavigationMenuContent className="p-3">
+                  <ul className="grid gap-x-2 gap-y-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
-                        <a
-                          className="from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md"
-                          href="/"
+                        <Link
+                          to="/applications/provisional-application"
+                          className="from-muted/50 to-muted flex h-full w-full flex-col justify-center rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md"
                         >
                           <Badge
                             variant="outline"
                             className="bg-background text-primary border-primary dark:bg-blue-600"
                           >
-                            PCT
+                            Provisional Application
                           </Badge>
                           <div className="mt-4 mb-2 text-lg font-medium">
-                            <span>National Phase in Korea</span>
+                            <span>
+                              Same effect as a U.S. provisional — for a fraction
+                              of the price
+                            </span>
                           </div>
                           <p className="text-muted-foreground text-sm leading-tight">
-                            We help you file a PCT national phase application in
-                            Korea
+                            File a Korean provisional application to secure your
+                            priority date under the Paris Convention, without
+                            the high cost of a U.S. patent attorney.
                           </p>
-                        </a>
+                        </Link>
                       </NavigationMenuLink>
                     </li>
                     <ListItem
-                      href="/services/patent-application"
-                      title="Patent application"
+                      href="/applications/national-phase"
+                      title="PCT National Phase in Korea"
+                      className="py-1"
                     >
-                      We help you file a patent application in Korea
+                      Enter the Korean national phase for your PCT application
+                      with ease. We handle all required translations, filings,
+                      and official communication with KIPO — fast, affordable,
+                      and compliant.
                     </ListItem>
                     <ListItem
-                      href="/services/trademark-application"
+                      href="/applications/trademark-application"
                       title="Trademark application"
+                      className="py-1"
                     >
-                      We help you file a trademark application in Korea
+                      Start your Korean trademark application with ease. Our
+                      AI-powered process guides you every step of the way — no
+                      legal jargon needed.
                     </ListItem>
                     <ListItem
-                      href="/services/design-application"
+                      href="/applications/design-application"
                       title="Design application"
+                      className="py-1"
                     >
-                      We help you file a design application in Korea
+                      Simple and structured — we make your Korean design
+                      application effortless.
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
@@ -529,9 +545,9 @@ function ListItem({
   return (
     <li {...props}>
       <NavigationMenuLink asChild>
-        <Link href={href}>
+        <Link to={href}>
           <div className="text-sm leading-none font-medium">{title}</div>
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+          <p className="text-muted-foreground text-sm leading-snug">
             {children}
           </p>
         </Link>

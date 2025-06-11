@@ -33,8 +33,10 @@ export default function NavigationLayout({ loaderData }: Route.ComponentProps) {
           }
         </Await>
       </Suspense>
-      <div className="mx-auto my-16 w-full max-w-screen-2xl px-5 md:my-32">
-        <Outlet />
+      <div className="mx-auto w-full">
+        <div className="mx-auto w-full">
+          <Outlet />
+        </div>
       </div>
       <Footer />
     </div>

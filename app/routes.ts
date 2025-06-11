@@ -1,9 +1,9 @@
 /**
  * Application Routes Configuration
- * 
+ *
  * This file defines all routes for the application using React Router's
  * file-based routing system. Routes are organized by feature and access level.
- * 
+ *
  * The structure uses layouts for shared UI elements and prefixes for route grouping.
  * This approach creates a hierarchical routing system that's both maintainable and scalable.
  */
@@ -18,6 +18,12 @@ import {
 export default [
   route("/robots.txt", "core/screens/robots.ts"),
   route("/sitemap.xml", "core/screens/sitemap.ts"),
+  layout("core/layouts/private.layout.tsx", { id: "private-application" }, [
+    route(
+      "/applications/provisional-application/start",
+      "features/applications/screens/provisional-application/start.tsx",
+    ),
+  ]),
   ...prefix("/debug", [
     // You should delete this in production.
     route("/sentry", "debug/sentry.tsx"),
@@ -48,6 +54,41 @@ export default [
     route("/auth/confirm", "features/auth/screens/confirm.tsx"),
     index("features/home/screens/home.tsx"),
     route("/error", "core/screens/error.tsx"),
+    ...prefix("/applications", [
+      layout(
+        "features/applications/screens/provisional-application/layout.tsx",
+        [
+          route(
+            "/provisional-application",
+            "features/applications/screens/provisional-application/overview.tsx",
+          ),
+          route(
+            "/provisional-application/price",
+            "features/applications/screens/provisional-application/price.tsx",
+          ),
+          route(
+            "/provisional-application/faq",
+            "features/applications/screens/provisional-application/faq.tsx",
+          ),
+          route(
+            "/provisional-application/guide",
+            "features/applications/screens/provisional-application/guide.tsx",
+          ),
+        ],
+      ),
+      route(
+        "/national-phase",
+        "features/applications/screens/national-phase.tsx",
+      ),
+      route(
+        "/trademark-application",
+        "features/applications/screens/trademark-application.tsx",
+      ),
+      route(
+        "/design-application",
+        "features/applications/screens/design-application.tsx",
+      ),
+    ]),
     layout("core/layouts/public.layout.tsx", [
       // Routes that should only be visible to unauthenticated users.
       route("/login", "features/auth/screens/login.tsx"),

@@ -88,6 +88,10 @@ export const patents = pgTable(
     prior_disclosure_documents: jsonb().default(sql`'[]'::jsonb`),
     final_claim_count: integer(),
 
+    //결제 되었는지 여부
+    is_paid: boolean().default(false),
+    paid_at: timestamp(),
+
     // 🔸 메타데이터 (optional json field)
     metadata: jsonb().default(sql`'{}'::jsonb`), // 객체
 
@@ -107,11 +111,25 @@ export const patents = pgTable(
 
 export const entities = pgTable("entities", {
   id: uuid("id").defaultRandom().primaryKey(),
+
+  user_id: uuid("user_id")
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+
   name_kr: text().notNull(),
   name_en: text(),
   client_code: text(),
   address_kr: text(),
   address_en: text(),
+
+  // 🔹 변리사 위임 정보
+  has_poa: boolean().default(false), // 위임 여부
+  signature_image_url: text(), // 서명 이미지 URL
+  signer_position: text().notNull(), // 직책 (자유 입력 가능)
+  signer_name: text(), // 서명자 성함
+  representative_name: text(), // 법인 대표자 이름
+
+  ...timestamps,
 });
 
 export const inventors = pgTable("inventors", {

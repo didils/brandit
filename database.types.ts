@@ -9,22 +9,120 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      entities: {
+        Row: {
+          address_en: string | null
+          address_kr: string | null
+          client_code: string | null
+          created_at: string
+          has_poa: boolean | null
+          id: string
+          name_en: string | null
+          name_kr: string
+          representative_name: string | null
+          signature_image_url: string | null
+          signer_name: string | null
+          signer_position: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_en?: string | null
+          address_kr?: string | null
+          client_code?: string | null
+          created_at?: string
+          has_poa?: boolean | null
+          id?: string
+          name_en?: string | null
+          name_kr: string
+          representative_name?: string | null
+          signature_image_url?: string | null
+          signer_name?: string | null
+          signer_position: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_en?: string | null
+          address_kr?: string | null
+          client_code?: string | null
+          created_at?: string
+          has_poa?: boolean | null
+          id?: string
+          name_en?: string | null
+          name_kr?: string
+          representative_name?: string | null
+          signature_image_url?: string | null
+          signer_name?: string | null
+          signer_position?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inventors: {
+        Row: {
+          address_en: string | null
+          address_kr: string | null
+          created_at: string
+          id: string
+          id_number: string | null
+          name_en: string | null
+          name_kr: string
+          nationality: string | null
+          residence_country: string | null
+          updated_at: string
+          user_id: string
+          zipcode: string | null
+        }
+        Insert: {
+          address_en?: string | null
+          address_kr?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name_en?: string | null
+          name_kr: string
+          nationality?: string | null
+          residence_country?: string | null
+          updated_at?: string
+          user_id: string
+          zipcode?: string | null
+        }
+        Update: {
+          address_en?: string | null
+          address_kr?: string | null
+          created_at?: string
+          id?: string
+          id_number?: string | null
+          name_en?: string | null
+          name_kr?: string
+          nationality?: string | null
+          residence_country?: string | null
+          updated_at?: string
+          user_id?: string
+          zipcode?: string | null
+        }
+        Relationships: []
+      }
       patents: {
         Row: {
           abandonment_date: string | null
           abandonment_reason: string | null
           annuity_due_date: string | null
-          applicant_name: string | null
+          applicant: Json | null
           applicant_reference: string | null
           application_number: string | null
           application_type: string
-          assignee: string | null
+          assignee: Json | null
           attorney_name: string | null
           claims_due_date: string | null
           claims_submitted_at: string | null
+          country_code: string | null
           created_at: string
           decision_to_register_date: string | null
           earliest_priority_date: string | null
+          electronic_certificate_selected: boolean | null
           examination_request_due: string | null
           examination_requested: Database["public"]["Enums"]["yes_no"] | null
           examination_requested_at: string | null
@@ -32,14 +130,19 @@ export type Database = {
           expedited_examination_requested: boolean | null
           filing_date: string | null
           filing_deadline: string | null
-          inventor: string | null
+          final_claim_count: number | null
+          inventor: Json | null
           is_annuity_managed: boolean | null
+          is_paid: boolean | null
           late_registration_penalty_due: string | null
           metadata: Json | null
           our_ref: string
+          paid_at: string | null
           patent_id: number
           pct_application_date: string | null
           pct_application_number: string | null
+          prior_disclosure_documents: Json | null
+          prior_disclosure_exception_claimed: boolean | null
           priority_claimed: Database["public"]["Enums"]["yes_no"] | null
           priority_date: string | null
           priority_rights: Json | null
@@ -60,17 +163,19 @@ export type Database = {
           abandonment_date?: string | null
           abandonment_reason?: string | null
           annuity_due_date?: string | null
-          applicant_name?: string | null
+          applicant?: Json | null
           applicant_reference?: string | null
           application_number?: string | null
           application_type: string
-          assignee?: string | null
+          assignee?: Json | null
           attorney_name?: string | null
           claims_due_date?: string | null
           claims_submitted_at?: string | null
+          country_code?: string | null
           created_at?: string
           decision_to_register_date?: string | null
           earliest_priority_date?: string | null
+          electronic_certificate_selected?: boolean | null
           examination_request_due?: string | null
           examination_requested?: Database["public"]["Enums"]["yes_no"] | null
           examination_requested_at?: string | null
@@ -78,14 +183,19 @@ export type Database = {
           expedited_examination_requested?: boolean | null
           filing_date?: string | null
           filing_deadline?: string | null
-          inventor?: string | null
+          final_claim_count?: number | null
+          inventor?: Json | null
           is_annuity_managed?: boolean | null
+          is_paid?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
           our_ref: string
+          paid_at?: string | null
           patent_id?: never
           pct_application_date?: string | null
           pct_application_number?: string | null
+          prior_disclosure_documents?: Json | null
+          prior_disclosure_exception_claimed?: boolean | null
           priority_claimed?: Database["public"]["Enums"]["yes_no"] | null
           priority_date?: string | null
           priority_rights?: Json | null
@@ -106,17 +216,19 @@ export type Database = {
           abandonment_date?: string | null
           abandonment_reason?: string | null
           annuity_due_date?: string | null
-          applicant_name?: string | null
+          applicant?: Json | null
           applicant_reference?: string | null
           application_number?: string | null
           application_type?: string
-          assignee?: string | null
+          assignee?: Json | null
           attorney_name?: string | null
           claims_due_date?: string | null
           claims_submitted_at?: string | null
+          country_code?: string | null
           created_at?: string
           decision_to_register_date?: string | null
           earliest_priority_date?: string | null
+          electronic_certificate_selected?: boolean | null
           examination_request_due?: string | null
           examination_requested?: Database["public"]["Enums"]["yes_no"] | null
           examination_requested_at?: string | null
@@ -124,14 +236,19 @@ export type Database = {
           expedited_examination_requested?: boolean | null
           filing_date?: string | null
           filing_deadline?: string | null
-          inventor?: string | null
+          final_claim_count?: number | null
+          inventor?: Json | null
           is_annuity_managed?: boolean | null
+          is_paid?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
           our_ref?: string
+          paid_at?: string | null
           patent_id?: never
           pct_application_date?: string | null
           pct_application_number?: string | null
+          prior_disclosure_documents?: Json | null
+          prior_disclosure_exception_claimed?: boolean | null
           priority_claimed?: Database["public"]["Enums"]["yes_no"] | null
           priority_date?: string | null
           priority_rights?: Json | null

@@ -5,7 +5,15 @@
  */
 import type { Route } from "./+types/start";
 
-import { ChevronRight, ChevronRightIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronRight,
+  ChevronRightIcon,
+  ChevronsUpDownIcon,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
+import React from "react";
 import { Form, Link } from "react-router";
 
 import { Button } from "~/core/components/ui/button";
@@ -15,8 +23,22 @@ import {
   CardHeader,
   CardTitle,
 } from "~/core/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/core/components/ui/command";
 import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/core/components/ui/popover";
+import { cn } from "~/core/lib/utils";
 
 export const loader = () => {
   return {
@@ -50,6 +72,97 @@ export const loader = () => {
     ],
   };
 };
+
+const applicants = [
+  {
+    name_en: "Samsung Electronics Co., Ltd.",
+    address_en:
+      "1, Samsung-ro, Giheung-gu, Yongin-si, Gyeonggi-do, Republic of Korea",
+  },
+  {
+    name_en: "Apple Inc.",
+    address_en:
+      "1600 Amphitheatre Parkway, Mountain View, CA 94043, United States",
+  },
+  {
+    name_en: "Google Inc.",
+    address_en:
+      "1600 Amphitheatre Parkway, Mountain View, CA 94043, United States",
+  },
+];
+
+export function ApplicantCombobox() {
+  const [open, setOpen] = React.useState(false);
+  const [value, setValue] = React.useState("");
+  const [selected, setSelected] = React.useState<string[]>([]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="min-w-xl justify-between font-normal"
+        >
+          {selected.length > 0
+            ? selected.join(", ")
+            : "Select previous applicants..."}
+          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="min-w-xl p-0">
+        <Command>
+          <CommandInput placeholder="Search previous applicants" />
+          <CommandList>
+            <CommandEmpty>No applicant found.</CommandEmpty>
+            <CommandGroup>
+              {applicants.map((applicant) => (
+                <CommandItem
+                  key={applicant.name_en}
+                  value={applicant.name_en}
+                  onSelect={(currentValue) => {
+                    setSelected((prev) =>
+                      prev.includes(currentValue)
+                        ? prev.filter((v) => v !== currentValue)
+                        : [...prev, currentValue],
+                    );
+                  }}
+                >
+                  <CheckIcon
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selected.includes(applicant.name_en)
+                        ? "opacity-100"
+                        : "opacity-0",
+                    )}
+                  />
+                  <div className="flex flex-col items-start">
+                    <div className="text-sm font-medium">
+                      {applicant.name_en}
+                    </div>
+                    <div className="text-muted-foreground pl-2 text-xs">
+                      {applicant.address_en}
+                    </div>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandItem
+              onSelect={() => {
+                // 새로운 신청자 추가 로직 실행
+                console.log("Add new applicant clicked");
+              }}
+            >
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Add new applicant
+            </CommandItem>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function Start({ loaderData }: Route.ComponentProps) {
   const { applicants, inventors } = loaderData;
@@ -96,52 +209,72 @@ export default function Start({ loaderData }: Route.ComponentProps) {
       </div>
       <div className="flex w-full flex-row items-start justify-center gap-20 bg-blue-300 py-6">
         <div className="flex w-[70%] flex-col items-start gap-10 space-y-5 bg-red-300">
-          <Form className="mx-auto flex w-[50%] flex-col items-start space-y-2">
-            <Label
-              htmlFor="applicant"
-              className="flex flex-col items-start text-lg"
-            >
-              Applicant
-            </Label>
-            <Input
-              id="applicant"
-              name="applicant"
-              required
-              type="text"
-              placeholder="Find or add applicants..."
-              className="max-w-md"
-            />
-          </Form>
-          <Form className="mx-auto flex w-[50%] flex-col items-start space-y-2">
-            <Label
-              htmlFor="applicant"
-              className="flex flex-col items-start text-lg"
-            >
-              Inventor
-            </Label>
-            <Input
-              id="inventor"
-              name="inventor"
-              required
-              type="text"
-              placeholder="Find or add inventors..."
-              className="max-w-md"
-            />
-          </Form>
-          <Form className="mx-auto flex w-[50%] flex-col items-start space-y-2">
-            <Label
-              htmlFor="applicant"
-              className="flex flex-col items-start text-lg"
-            >
-              Provisional Specification File
-            </Label>
-            <Input
-              id="file"
-              name="file"
-              required
-              type="file"
-              className="max-w-md"
-            />
+          <Form className="mx-auto flex w-[50%] flex-col items-start gap-10 space-y-2">
+            <div>
+              <Label
+                htmlFor="applicant"
+                className="flex flex-col items-start text-lg"
+              >
+                Title of the invention
+              </Label>
+              <Input
+                id="applicant"
+                name="applicant"
+                required
+                type="text"
+                placeholder="Title of the invention"
+                className="max-w-md min-w-xl"
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="applicant"
+                className="flex flex-col items-start text-lg"
+              >
+                Applicant
+              </Label>
+              <Input
+                id="applicant"
+                name="applicant"
+                required
+                type="text"
+                className="max-w-md min-w-xl"
+                value="테스트"
+              />
+              <ApplicantCombobox />
+            </div>
+            <div>
+              <Label
+                htmlFor="applicant"
+                className="flex flex-col items-start text-lg"
+              >
+                Inventor
+              </Label>
+
+              <Input
+                id="inventor"
+                name="inventor"
+                required
+                type="text"
+                placeholder="Find or add inventors..."
+                className="max-w-md"
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="applicant"
+                className="flex flex-col items-start text-lg"
+              >
+                Provisional Specification File
+              </Label>
+              <Input
+                id="file"
+                name="file"
+                required
+                type="file"
+                className="max-w-md"
+              />
+            </div>
           </Form>
         </div>
         <div className="h-screen w-[30%] bg-[#f5f6f8]">right</div>

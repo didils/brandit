@@ -13,7 +13,7 @@ import {
   PlusIcon,
   XIcon,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { Form, Link } from "react-router";
 
 import { Button } from "~/core/components/ui/button";
@@ -42,130 +42,369 @@ import { cn } from "~/core/lib/utils";
 
 export const loader = () => {
   return {
-    applicants: [
-      {
-        id: 1,
-        name: "Byung Joon",
-      },
-      {
-        id: 2,
-        name: "Nicolas",
-      },
-      {
-        id: 3,
-        name: "Lynn",
-      },
-    ],
-    inventors: [
-      {
-        id: 1,
-        name: "Byung Joon",
-      },
-      {
-        id: 2,
-        name: "Nicolas",
-      },
-      {
-        id: 3,
-        name: "Lynn",
-      },
-    ],
+    inventors,
+    applicants,
   };
 };
 
-const applicants = [
+export const inventors = [
   {
-    name_en: "Samsung Electronics Co., Ltd.",
-    address_en:
-      "1, Samsung-ro, Giheung-gu, Yongin-si, Gyeonggi-do, Republic of Korea",
+    id: "inventor-1",
+    name_kr: "김은정",
+    name_en: "Eunjung Kim",
+    nationality: "KR",
+    id_number: "900101-1234567",
+    zipcode: "06000",
+    address_kr: "서울특별시 서초구 반포대로 45",
+    address_en: "45 Banpo-daero, Seocho-gu, Seoul",
+    residence_country: "KR",
   },
   {
-    name_en: "Apple Inc.",
-    address_en:
-      "1600 Amphitheatre Parkway, Mountain View, CA 94043, United States",
+    id: "inventor-2",
+    name_kr: "이한결",
+    name_en: "Hangyeol Lee",
+    nationality: "KR",
+    id_number: "880202-2345678",
+    zipcode: "13500",
+    address_kr: "경기도 고양시 일산동구 백마로 12",
+    address_en: "12 Baekma-ro, Ilsandong-gu, Goyang-si, Gyeonggi-do",
+    residence_country: "KR",
   },
   {
-    name_en: "Google Inc.",
-    address_en:
-      "1600 Amphitheatre Parkway, Mountain View, CA 94043, United States",
+    id: "inventor-3",
+    name_kr: "John Smith",
+    name_en: "John Smith",
+    nationality: "US",
+    id_number: "123-45-6789",
+    zipcode: "10001",
+    address_kr: "미국 뉴욕시 맨해튼 5번가 101",
+    address_en: "101 5th Ave, Manhattan, NY, USA",
+    residence_country: "US",
+  },
+  {
+    id: "inventor-4",
+    name_kr: "사토 유이",
+    name_en: "Yui Sato",
+    nationality: "JP",
+    id_number: "S12345678",
+    zipcode: "150-0001",
+    address_kr: "일본 도쿄도 시부야구 진구마에 1-2-3",
+    address_en: "1-2-3 Jingumae, Shibuya, Tokyo, Japan",
+    residence_country: "JP",
+  },
+  {
+    id: "inventor-5",
+    name_kr: "최은석",
+    name_en: "Eunseok Choi",
+    nationality: "KR",
+    id_number: "750303-3456789",
+    zipcode: "48000",
+    address_kr: "부산광역시 사하구 낙동대로 222",
+    address_en: "222 Nakdong-daero, Saha-gu, Busan",
+    residence_country: "KR",
   },
 ];
 
-export function ApplicantCombobox() {
+export const applicants = [
+  {
+    id: "applicant-1",
+    name_kr: "홍길동",
+    name_en: "Gil-Dong Hong",
+    client_code: "A001",
+    address_kr: "서울특별시 강남구 테헤란로 123",
+    address_en: "123 Teheran-ro, Gangnam-gu, Seoul",
+    has_poa: true,
+    signature_image_url: "/signatures/gildong.png",
+    signer_position: "대표이사",
+    signer_name: "홍길동",
+    representative_name: "홍길동",
+  },
+  {
+    id: "applicant-2",
+    name_kr: "주식회사 미래테크",
+    name_en: "MiraeTech Co., Ltd.",
+    client_code: "B102",
+    address_kr: "경기도 성남시 분당구 판교로 456",
+    address_en: "456 Pangyo-ro, Bundang-gu, Seongnam-si, Gyeonggi-do",
+    has_poa: true,
+    signature_image_url: "/signatures/miraetech.png",
+    signer_position: "법무팀장",
+    signer_name: "이수진",
+    representative_name: "김성훈",
+  },
+  {
+    id: "applicant-3",
+    name_kr: "이노베이션랩",
+    name_en: "Innovation Lab",
+    client_code: "C789",
+    address_kr: "부산광역시 해운대구 센텀서로 89",
+    address_en: "89 Centumseo-ro, Haeundae-gu, Busan",
+    has_poa: false,
+    signature_image_url: "",
+    signer_position: "CTO",
+    signer_name: "박지훈",
+    representative_name: "한지민",
+  },
+  {
+    id: "applicant-4",
+    name_kr: "강소기업연구소",
+    name_en: "Small Business Institute",
+    client_code: "D321",
+    address_kr: "대전광역시 유성구 대학로 99",
+    address_en: "99 Daehak-ro, Yuseong-gu, Daejeon",
+    has_poa: true,
+    signature_image_url: "/signatures/sbi.png",
+    signer_position: "이사",
+    signer_name: "최유정",
+    representative_name: "오세훈",
+  },
+  {
+    id: "applicant-5",
+    name_kr: "최영수",
+    name_en: "Youngsoo Choi",
+    client_code: "E567",
+    address_kr: "인천광역시 연수구 송도미래로 22",
+    address_en: "22 Songdo Mirae-ro, Yeonsu-gu, Incheon",
+    has_poa: false,
+    signature_image_url: "",
+    signer_position: "개인사업자",
+    signer_name: "최영수",
+    representative_name: "",
+  },
+];
+
+export function ApplicantCombobox({
+  selectedNames,
+  onChange,
+}: {
+  selectedNames: string[];
+  onChange: (names: string[]) => void;
+}) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
-  const [selected, setSelected] = React.useState<string[]>([]);
+  //   const [value, setValue] = React.useState("");
+  //   const [selected, setSelected] = React.useState<string[]>([]);
+
+  const toggleSelect = (value: string) => {
+    const updated = selectedNames.includes(value)
+      ? selectedNames.filter((v) => v !== value)
+      : [...selectedNames, value];
+    onChange(updated);
+  };
+
+  const removeSelected = (value: string) => {
+    onChange(selectedNames.filter((v) => v !== value));
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="min-w-xl justify-between font-normal"
-        >
-          {selected.length > 0
-            ? selected.join(", ")
-            : "Select previous applicants..."}
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="min-w-xl p-0">
-        <Command>
-          <CommandInput placeholder="Search previous applicants" />
-          <CommandList>
-            <CommandEmpty>No applicant found.</CommandEmpty>
-            <CommandGroup>
-              {applicants.map((applicant) => (
-                <CommandItem
-                  key={applicant.name_en}
-                  value={applicant.name_en}
-                  onSelect={(currentValue) => {
-                    setSelected((prev) =>
-                      prev.includes(currentValue)
-                        ? prev.filter((v) => v !== currentValue)
-                        : [...prev, currentValue],
-                    );
-                  }}
-                >
-                  <CheckIcon
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selected.includes(applicant.name_en)
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  />
-                  <div className="flex flex-col items-start">
-                    <div className="text-sm font-medium">
-                      {applicant.name_en}
-                    </div>
-                    <div className="text-muted-foreground pl-2 text-xs">
-                      {applicant.address_en}
-                    </div>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandItem
-              onSelect={() => {
-                // 새로운 신청자 추가 로직 실행
-                console.log("Add new applicant clicked");
-              }}
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Add new applicant
-            </CommandItem>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="w-full max-w-xl min-w-[280px]">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            Click to select or add applicants
+            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <div className="w-full max-w-xl min-w-[280px] xl:min-w-[500px]">
+            <Command>
+              <CommandInput placeholder="Search previous applicants" />
+              <CommandList>
+                <CommandEmpty>No applicant found.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => {
+                      // 새로운 신청자 추가 로직 실행
+                      console.log("Add new applicant clicked");
+                    }}
+                    className="w-full max-w-xl min-w-[280px]"
+                  >
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Add new applicant
+                  </CommandItem>
+                  {applicants.map((applicant) => (
+                    <CommandItem
+                      key={applicant.name_en}
+                      value={applicant.name_en}
+                      onSelect={(currentValue) => toggleSelect(currentValue)}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedNames.includes(applicant.name_en)
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      <div className="flex flex-col items-start">
+                        <div className="text-sm font-medium">
+                          {applicant.name_en}
+                        </div>
+                        <div className="text-muted-foreground pl-2 text-xs">
+                          {applicant.address_en}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* 🔽 선택된 항목 출력 영역 */}
+      <div className="mt-3 space-y-2">
+        {selectedNames.map((name) => (
+          <SelectedApplicantCard
+            key={name}
+            name={name}
+            onRemove={() => removeSelected(name)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ✅ 선택된 항목을 출력하는 컴포넌트
+function SelectedApplicantCard({
+  name,
+  onRemove,
+}: {
+  name: string;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
+      <span className="text-sm font-medium">{name}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="ml-2 h-5 w-5"
+        onClick={onRemove}
+      >
+        <XIcon className="text-muted-foreground h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+export function InventorCombobox({
+  selectedNames,
+  onChange,
+}: {
+  selectedNames: string[];
+  onChange: (names: string[]) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  //   const [value, setValue] = React.useState("");
+  //   const [selected, setSelected] = React.useState<string[]>([]);
+
+  const toggleSelect = (value: string) => {
+    const updated = selectedNames.includes(value)
+      ? selectedNames.filter((v) => v !== value)
+      : [...selectedNames, value];
+    onChange(updated);
+  };
+
+  const removeSelected = (value: string) => {
+    onChange(selectedNames.filter((v) => v !== value));
+  };
+
+  return (
+    <div className="w-full max-w-xl min-w-[280px]">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            Click to select or add inventors
+            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <div className="w-full max-w-xl min-w-[280px] xl:min-w-[500px]">
+            <Command>
+              <CommandInput placeholder="Search previous inventors" />
+              <CommandList>
+                <CommandEmpty>No inventor found.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => {
+                      // 새로운 발명자 추가 로직 실행
+                      console.log("Add new inventor clicked");
+                    }}
+                  >
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Add new inventor
+                  </CommandItem>
+                  {inventors.map((inventor) => (
+                    <CommandItem
+                      key={inventor.name_en}
+                      value={inventor.name_en}
+                      onSelect={(currentValue) => {
+                        toggleSelect(currentValue);
+                      }}
+                    >
+                      <CheckIcon
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedNames.includes(inventor.name_en)
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      <div className="flex flex-col items-start">
+                        <div className="text-sm font-medium">
+                          {inventor.name_en}
+                        </div>
+                        <div className="text-muted-foreground pl-2 text-xs">
+                          {inventor.address_en}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
+        </PopoverContent>
+      </Popover>
+      {/* 🔽 선택된 항목 출력 영역 */}
+      <div className="mt-3 space-y-2">
+        {selectedNames.map((name) => (
+          <SelectedApplicantCard
+            key={name}
+            name={name}
+            onRemove={() => removeSelected(name)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
 export default function Start({ loaderData }: Route.ComponentProps) {
   const { applicants, inventors } = loaderData;
+  const [applicantNames, setApplicantNames] = useState<string[]>([]);
+  const [inventorNames, setInventorNames] = useState<string[]>([]);
+
+  const handleApplicantChange = (names: string[]) => {
+    setApplicantNames(names);
+  };
+
+  const handleInventorChange = (names: string[]) => {
+    setInventorNames(names);
+  };
+
   return (
     <div>
       <div className="flex w-full flex-row items-center justify-between bg-[#0e3359] px-4 py-1.5">
@@ -207,72 +446,113 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       </div>
-      <div className="flex w-full flex-row items-start justify-center gap-20 bg-blue-300 py-6">
-        <div className="flex w-[70%] flex-col items-start gap-10 space-y-5 bg-red-300">
+      <div className="flex w-full flex-row items-start justify-center gap-20 py-6">
+        <div className="flex w-[70%] flex-col items-start gap-10 space-y-5">
           <Form className="mx-auto flex w-[50%] flex-col items-start gap-10 space-y-2">
-            <div>
+            {/* <div className="flex flex-col items-start">
               <Label
                 htmlFor="applicant"
                 className="flex flex-col items-start text-lg"
               >
                 Title of the invention
               </Label>
+              <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                Please enter the title of the invention.
+              </small>
               <Input
                 id="applicant"
                 name="applicant"
                 required
                 type="text"
                 placeholder="Title of the invention"
-                className="max-w-md min-w-xl"
+                className=""
+              />
+            </div> */}
+            <div className="flex w-full flex-col items-start">
+              <Label
+                htmlFor="applicant"
+                className="flex flex-col items-start text-lg"
+              >
+                Title of the invention
+              </Label>
+              <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                A brief, descriptive title highlighting the invention’s main
+                function or features.
+              </small>
+              <Input
+                id="applicant"
+                name="applicant"
+                required
+                type="text"
+                placeholder="Title of the invention"
+                className="w-full max-w-xl min-w-[280px]"
               />
             </div>
-            <div>
+            <div className="flex w-full max-w-xl min-w-[280px] flex-col items-start">
               <Label
                 htmlFor="applicant"
                 className="flex flex-col items-start text-lg"
               >
                 Applicant
               </Label>
+              <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                The applicant must be an individual or entity entitled to the
+                invention. Multiple applicants allowed.
+              </small>
               <Input
                 id="applicant"
                 name="applicant"
                 required
-                type="text"
+                type="hidden"
                 className="max-w-md min-w-xl"
                 value="테스트"
               />
-              <ApplicantCombobox />
+              <ApplicantCombobox
+                selectedNames={applicantNames}
+                onChange={handleApplicantChange}
+              />
             </div>
-            <div>
+            <div className="flex w-full max-w-xl min-w-[280px] flex-col items-start">
               <Label
-                htmlFor="applicant"
+                htmlFor="inventor"
                 className="flex flex-col items-start text-lg"
               >
                 Inventor
               </Label>
-
+              <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                At least one natural person must have contributed to the
+                invention.
+              </small>
               <Input
                 id="inventor"
                 name="inventor"
                 required
-                type="text"
+                type="hidden"
                 placeholder="Find or add inventors..."
                 className="max-w-md"
               />
+              <InventorCombobox
+                selectedNames={inventorNames}
+                onChange={handleInventorChange}
+              />
             </div>
-            <div>
+            <div className="flex flex-col items-start">
               <Label
-                htmlFor="applicant"
+                htmlFor="file"
                 className="flex flex-col items-start text-lg"
               >
                 Provisional Specification File
               </Label>
+              <small className="text-muted-foreground text-sm font-light">
+                pdf, docx, pptx or any other file types of documents are
+                supported.
+              </small>
               <Input
                 id="file"
                 name="file"
                 required
                 type="file"
-                className="max-w-md"
+                className="mt-1.5 max-w-md min-w-xl"
               />
             </div>
           </Form>

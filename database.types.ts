@@ -131,14 +131,12 @@ export type Database = {
           filing_date: string | null
           filing_deadline: string | null
           final_claim_count: number | null
+          id: string
           inventor: Json | null
           is_annuity_managed: boolean | null
-          is_paid: boolean | null
           late_registration_penalty_due: string | null
           metadata: Json | null
           our_ref: string
-          paid_at: string | null
-          patent_id: number
           pct_application_date: string | null
           pct_application_number: string | null
           prior_disclosure_documents: Json | null
@@ -184,14 +182,12 @@ export type Database = {
           filing_date?: string | null
           filing_deadline?: string | null
           final_claim_count?: number | null
+          id?: string
           inventor?: Json | null
           is_annuity_managed?: boolean | null
-          is_paid?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
           our_ref: string
-          paid_at?: string | null
-          patent_id?: never
           pct_application_date?: string | null
           pct_application_number?: string | null
           prior_disclosure_documents?: Json | null
@@ -237,14 +233,12 @@ export type Database = {
           filing_date?: string | null
           filing_deadline?: string | null
           final_claim_count?: number | null
+          id?: string
           inventor?: Json | null
           is_annuity_managed?: boolean | null
-          is_paid?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
           our_ref?: string
-          paid_at?: string | null
-          patent_id?: never
           pct_application_date?: string | null
           pct_application_number?: string | null
           prior_disclosure_documents?: Json | null
@@ -317,6 +311,116 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      payments_patents: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          patent_id: string
+          payment_method: string | null
+          payment_ref: string | null
+          process_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          patent_id: string
+          payment_method?: string | null
+          payment_ref?: string | null
+          process_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          patent_id?: string
+          payment_method?: string | null
+          payment_ref?: string | null
+          process_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_patents_patent_id_patents_id_fk"
+            columns: ["patent_id"]
+            isOneToOne: false
+            referencedRelation: "patents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_patents_process_id_processes_patents_id_fk"
+            columns: ["process_id"]
+            isOneToOne: false
+            referencedRelation: "processes_patents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processes_patents: {
+        Row: {
+          attached_files: Json | null
+          case_id: string
+          created_at: string
+          id: string
+          is_paid: boolean | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_method: string | null
+          payment_ref: string | null
+          status: string | null
+          step_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attached_files?: Json | null
+          case_id: string
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          status?: string | null
+          step_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attached_files?: Json | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          is_paid?: boolean | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          status?: string | null
+          step_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processes_patents_case_id_patents_id_fk"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "patents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -28,7 +28,7 @@ export const patents = pgTable(
   "patents",
   {
     // PK: Primary key for patent record (UUID)
-    ...makeIdentityColumn("patent_id"),
+    id: uuid().defaultRandom().primaryKey(),
 
     // 🔹 필수 항목 (required fields)
     our_ref: text().notNull(), // 내부 관리번호
@@ -88,10 +88,6 @@ export const patents = pgTable(
     prior_disclosure_documents: jsonb().default(sql`'[]'::jsonb`),
     final_claim_count: integer(),
 
-    //결제 되었는지 여부
-    is_paid: boolean().default(false),
-    paid_at: timestamp(),
-
     // 🔸 메타데이터 (optional json field)
     metadata: jsonb().default(sql`'{}'::jsonb`), // 객체
 
@@ -148,5 +144,81 @@ export const inventors = pgTable("inventors", {
   address_en: text(),
   residence_country: text(),
 
+  ...timestamps,
+});
+
+export const processes_patents = pgTable("processes_patents", {
+  // 고유 식별자
+  id: uuid().defaultRandom().primaryKey(),
+
+  // 사용자 식별자 (auth.users의 id 참조)
+  user_id: uuid()
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+
+  // 사건 ID (특허 사건의 id)
+  case_id: uuid()
+    .notNull()
+    .references(() => patents.id, { onDelete: "cascade" }),
+
+  // 단계 이름
+  step_name: text().notNull(),
+
+  // 상태: pending, in_progress, completed, delayed, cancelled, awaiting_payment, paid
+  status: text().default("pending"),
+
+  // ✅ 관련 파일들 (여러 개 가능하므로 JSON 배열 형태로 저장)
+  attached_files: jsonb(), // 예: [{ name, url, type }]
+
+  // ✅ 결제 여부
+  is_paid: boolean().default(false),
+
+  // ✅ 결제일시
+  paid_at: timestamp(),
+
+  // ✅ 결제 수단 (선택): "card", "bank", "paypal", "free", "internal" 등
+  payment_method: text(),
+
+  // ✅ 결제 금액 (선택): 0원도 포함
+  payment_amount: integer(),
+
+  // ✅ 결제 고유 ID (예: PG사 결제번호 또는 내부 관리용)
+  payment_ref: text(),
+
+  ...timestamps,
+});
+
+export const payments_patents = pgTable("payments_patents", {
+  // 고유 식별자
+  id: uuid().defaultRandom().primaryKey(),
+
+  // 사용자 ID (auth.users 테이블 참조)
+  user_id: uuid()
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+
+  // 특허 사건 ID (patents 테이블 참조)
+  patent_id: uuid()
+    .notNull()
+    .references(() => patents.id, { onDelete: "cascade" }),
+
+  // 연결된 프로세스 ID (processes_patents 테이블 참조)
+  process_id: uuid()
+    .notNull()
+    .references(() => processes_patents.id, { onDelete: "cascade" }),
+
+  // 결제 금액 (단위: 원)
+  amount: integer().notNull(),
+
+  // 결제 수단 (예: card, bank, paypal, free, internal 등)
+  payment_method: text(),
+
+  // 결제 일시
+  paid_at: timestamp(),
+
+  // 결제 고유 식별자 (예: PG사 거래 번호 또는 내부용 ID)
+  payment_ref: text(),
+
+  // 생성일시 및 수정일시
   ...timestamps,
 });

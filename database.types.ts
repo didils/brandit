@@ -136,7 +136,7 @@ export type Database = {
           is_annuity_managed: boolean | null
           late_registration_penalty_due: string | null
           metadata: Json | null
-          our_ref: string
+          our_ref: string | null
           pct_application_date: string | null
           pct_application_number: string | null
           prior_disclosure_documents: Json | null
@@ -187,7 +187,7 @@ export type Database = {
           is_annuity_managed?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
-          our_ref: string
+          our_ref?: string | null
           pct_application_date?: string | null
           pct_application_number?: string | null
           prior_disclosure_documents?: Json | null
@@ -238,7 +238,7 @@ export type Database = {
           is_annuity_managed?: boolean | null
           late_registration_penalty_due?: string | null
           metadata?: Json | null
-          our_ref?: string
+          our_ref?: string | null
           pct_application_date?: string | null
           pct_application_number?: string | null
           prior_disclosure_documents?: Json | null
@@ -373,6 +373,7 @@ export type Database = {
           created_at: string
           id: string
           is_paid: boolean | null
+          our_ref: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_method: string | null
@@ -388,6 +389,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_paid?: boolean | null
+          our_ref?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_method?: string | null
@@ -403,6 +405,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_paid?: boolean | null
+          our_ref?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_method?: string | null
@@ -454,6 +457,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_provisional_application: {
+        Args:
+          | {
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_attached_files: Json
+            }
+          | {
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+            }
+        Returns: {
+          patent_id: string
+          our_ref: string
+        }[]
+      }
       pop: {
         Args: { queue_name: string }
         Returns: {

@@ -31,7 +31,7 @@ export const patents = pgTable(
     id: uuid().defaultRandom().primaryKey(),
 
     // 🔹 필수 항목 (required fields)
-    our_ref: text().notNull(), // 내부 관리번호
+    our_ref: text(), // 내부 관리번호
     status: text().notNull(), // 현재 상태
     application_type: text().notNull(), // 출원종류 (신규/분할/PCT 등)
 
@@ -82,10 +82,10 @@ export const patents = pgTable(
     priority_claimed: yesNoEnum("priority_claimed"), // 우선권 주장 여부
     priority_rights: jsonb().default(sql`'[]'::jsonb`), // 우선권 정보 [배열]]
 
-    electronic_certificate_selected: boolean().default(true),
-    country_code: text(),
-    prior_disclosure_exception_claimed: boolean().default(false),
-    prior_disclosure_documents: jsonb().default(sql`'[]'::jsonb`),
+    electronic_certificate_selected: boolean().default(true), //전자등록증 선택 여부
+    country_code: text(), //국가 코드
+    prior_disclosure_exception_claimed: boolean().default(false), //사전공개 예외 주장 여부
+    prior_disclosure_documents: jsonb().default(sql`'[]'::jsonb`), //사전공개 문서
     final_claim_count: integer(),
 
     // 🔸 메타데이터 (optional json field)
@@ -161,11 +161,13 @@ export const processes_patents = pgTable("processes_patents", {
     .notNull()
     .references(() => patents.id, { onDelete: "cascade" }),
 
+  our_ref: text(), // 내부 관리번호
+
   // 단계 이름
   step_name: text().notNull(),
 
   // 상태: pending, in_progress, completed, delayed, cancelled, awaiting_payment, paid
-  status: text().default("pending"),
+  status: text().default("awaiting_payment"),
 
   // ✅ 관련 파일들 (여러 개 가능하므로 JSON 배열 형태로 저장)
   attached_files: jsonb(), // 예: [{ name, url, type }]

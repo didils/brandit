@@ -88,6 +88,7 @@ export default [
         "/design-application",
         "features/applications/screens/design-application.tsx",
       ),
+      route("/payment", "features/applications/screens/payment.tsx"),
     ]),
     layout("core/layouts/public.layout.tsx", [
       // Routes that should only be visible to unauthenticated users.
@@ -139,6 +140,10 @@ export default [
       ...prefix("/dashboard", [
         index("features/users/screens/dashboard.tsx"),
         route("/payments", "features/payments/screens/payments.tsx"),
+        route(
+          "/provisional-applications",
+          "features/applications/screens/provisional-application/overview.tsx",
+        ),
       ]),
       route("/account/edit", "features/users/screens/account.tsx"),
     ]),

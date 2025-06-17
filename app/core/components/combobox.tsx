@@ -105,7 +105,10 @@ export function Combobox({
                   <CommandItem
                     key={item.id}
                     value={item.name_en}
-                    onSelect={() => toggleSelection(item)}
+                    onSelect={() => {
+                      toggleSelection(item);
+                      setOpen(false);
+                    }}
                     className="flex cursor-pointer items-start gap-2"
                   >
                     {/* 왼쪽 체크 아이콘 */}

@@ -177,7 +177,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="h-full">
         {children}
-        <Toaster richColors position="bottom-right" />
+        <Toaster richColors position="top-center" />
         <ScrollRestoration />
         <Scripts />
         {import.meta.env.VITE_GOOGLE_TAG_ID &&

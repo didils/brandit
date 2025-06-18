@@ -142,7 +142,7 @@ export default [
         route("/payments", "features/payments/screens/payments.tsx"),
         route(
           "/provisional-applications",
-          "features/applications/screens/provisional-application/overview.tsx",
+          "features/applications/screens/provisional.tsx",
         ),
       ]),
       route("/account/edit", "features/users/screens/account.tsx"),

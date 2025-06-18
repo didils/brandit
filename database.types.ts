@@ -370,14 +370,17 @@ export type Database = {
         Row: {
           attached_files: Json | null
           case_id: string
+          client_request: string | null
           created_at: string
           id: string
           is_paid: boolean | null
+          is_urgent: boolean | null
           our_ref: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_method: string | null
           payment_ref: string | null
+          staff_note: string | null
           status: string | null
           step_name: string
           updated_at: string
@@ -386,14 +389,17 @@ export type Database = {
         Insert: {
           attached_files?: Json | null
           case_id: string
+          client_request?: string | null
           created_at?: string
           id?: string
           is_paid?: boolean | null
+          is_urgent?: boolean | null
           our_ref?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_method?: string | null
           payment_ref?: string | null
+          staff_note?: string | null
           status?: string | null
           step_name: string
           updated_at?: string
@@ -402,14 +408,17 @@ export type Database = {
         Update: {
           attached_files?: Json | null
           case_id?: string
+          client_request?: string | null
           created_at?: string
           id?: string
           is_paid?: boolean | null
+          is_urgent?: boolean | null
           our_ref?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_method?: string | null
           payment_ref?: string | null
+          staff_note?: string | null
           status?: string | null
           step_name?: string
           updated_at?: string
@@ -457,6 +466,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_or_update_provisional_application: {
+        Args:
+          | {
+              p_patent_id: string
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+              p_status: string
+            }
+          | {
+              p_patent_id: string
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+              p_status: string
+              p_process_id?: string
+            }
+        Returns: {
+          patent_id: string
+          our_ref: string
+        }[]
+      }
       create_provisional_application: {
         Args:
           | {
@@ -472,6 +507,14 @@ export type Database = {
               p_inventor: Json
               p_attached_files: Json
             }
+          | {
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+              p_status: string
+            }
         Returns: {
           patent_id: string
           our_ref: string
@@ -485,6 +528,20 @@ export type Database = {
           enqueued_at: string
           vt: string
           message: Json
+        }[]
+      }
+      update_provisional_application: {
+        Args: {
+          p_patent_id: string
+          p_user_id: string
+          p_title_en: string
+          p_applicant: Json
+          p_inventor: Json
+          p_attached_files: Json
+        }
+        Returns: {
+          patent_id: string
+          our_ref: string
         }[]
       }
     }

@@ -166,6 +166,15 @@ export const processes_patents = pgTable("processes_patents", {
   // 단계 이름
   step_name: text().notNull(),
 
+  // ✅ 긴급 사건 여부
+  is_urgent: boolean().default(false),
+
+  // ✅ 고객 요청 사항 (고객이 입력한 요청 메시지)
+  client_request: text(),
+
+  // ✅ 담당자 메모 (내부 처리 내용 및 판단 근거)
+  staff_note: text(),
+
   // 상태: pending, in_progress, completed, delayed, cancelled, awaiting_payment, paid
   status: text().default("awaiting_payment"),
 

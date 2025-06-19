@@ -6,10 +6,12 @@
 import type { Route } from "./+types/start";
 
 import {
+  AlertCircleIcon,
   CheckIcon,
   ChevronsUpDownIcon,
   Loader2,
   PlusIcon,
+  Terminal,
   XIcon,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -17,6 +19,11 @@ import { Form, redirect, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { Combobox } from "~/core/components/combobox";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "~/core/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +46,7 @@ import {
 import { Dialog, DialogTitle } from "~/core/components/ui/dialog";
 import { DialogDescription } from "~/core/components/ui/dialog";
 import { FileDropzone } from "~/core/components/ui/filedropzone";
+import { FormErrorAlert } from "~/core/components/ui/form-error-alert";
 import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
 import { browserClient } from "~/core/lib/browser-client";
@@ -157,9 +165,14 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const [existingProcessId, setExistingProcessId] = useState<string | null>(
     null,
   );
-  // useEffect(() => {
-  //   console.log("🟢 existingDraftId updated to:", existingDraftId);
-  // }, [existingDraftId]);
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [staffNote, setStaffNote] = useState("");
+  const [clientRequest, setClientRequest] = useState("");
+  const [isHidden, setIsHidden] = useState(false);
+  const [isTitleMissing, setIsTitleMissing] = useState(false);
+  const [isApplicantMissing, setIsApplicantMissing] = useState(false);
+  const [isInventorMissing, setIsInventorMissing] = useState(false);
+  const [isFileMissing, setIsFileMissing] = useState(false);
   // ✅ 브라우저 환경에서만 browserClient를 초기화
   useEffect(() => {
     // console.log("🚀 [useEffect] 실행됨");
@@ -248,21 +261,25 @@ export default function Start({ loaderData }: Route.ComponentProps) {
 
   const handleUpload = async (uploadType: "checkout" | "draft") => {
     // ✅ 먼저 유효성 검사부터 실행 (아무 상태 변경 없이!)
+    if (!title || title.trim() === "") {
+      toast.error("Title of invention is required.");
+      setIsTitleMissing(true);
+      return;
+    }
     if (uploadType === "checkout") {
-      if (!title || title.trim() === "") {
-        toast.error("Title of invention is required.");
-        return;
-      }
       if (!selectedApplicants || selectedApplicants.length === 0) {
         toast.error("At least one applicant is required.");
+        setIsApplicantMissing(true);
         return;
       }
       if (!selectedInventors || selectedInventors.length === 0) {
         toast.error("At least one inventor is required.");
+        setIsInventorMissing(true);
         return;
       }
       if (!selectedFile) {
         toast.error("Attached file is required.");
+        setIsFileMissing(true);
         return;
       }
     }
@@ -612,8 +629,9 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               <Button
                 variant="outline"
                 className="min-w-[100px] rounded-md p-3 font-medium"
+                onClick={() => setIsHidden(!isHidden)}
               >
-                Hide preview
+                {isHidden ? "Show preview" : "Hide preview"}
               </Button>
               <Button
                 variant="default"
@@ -666,8 +684,17 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 placeholder="Title of the invention"
                 className="w-full max-w-xl min-w-[280px]"
                 value={title} // 2. input에 state 바인딩
-                onChange={(e) => setTitle(e.target.value)} // 3. 입력되면 state에 저장
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setIsTitleMissing(false);
+                }} // 3. 입력되면 state에 저장
               />
+              {isTitleMissing && (
+                <FormErrorAlert
+                  title="Title is required"
+                  description="Please enter a title."
+                />
+              )}
             </div>
             <Combobox
               comboName="applicant"
@@ -675,18 +702,29 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               description="The applicant must be an individual or entity entitled to the invention. Multiple applicants allowed."
               dbItem={applicants}
               items={selectedApplicants}
-              setItems={setSelectedApplicants}
-              onManageClick={() => {}}
+              setItems={(newItems) => {
+                setSelectedApplicants(newItems);
+                setIsApplicantMissing(false); // 선택 시 누락 해제
+              }}
+              onClick={() => {
+                setIsApplicantMissing(false);
+              }}
+              isApplicantMissing={isApplicantMissing}
+              isInventorMissing={isInventorMissing}
             />
-            <Combobox
-              comboName="inventor"
-              labelName="Inventor"
-              description="At least one natural person must have contributed to the invention. Multiple inventors allowed."
-              dbItem={inventors}
-              items={selectedInventors}
-              setItems={setSelectedInventors}
-              onManageClick={() => {}}
-            />
+            <div>
+              <Combobox
+                comboName="inventor"
+                labelName="Inventor"
+                description="At least one natural person must have contributed to the invention. Multiple inventors allowed."
+                dbItem={inventors}
+                items={selectedInventors}
+                setItems={setSelectedInventors}
+                onClick={() => setIsInventorMissing(false)}
+                isApplicantMissing={isApplicantMissing}
+                isInventorMissing={isInventorMissing}
+              />
+            </div>
             <div className="flex flex-col items-start">
               <Label
                 htmlFor="file"
@@ -698,15 +736,26 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 You can upload one file at a time. Supported document types
                 include PDF, DOCX, PPTX, and similar formats.
               </small>
-              <FileDropzone onFileSelect={(file) => setSelectedFile(file)} />
+              <FileDropzone
+                onFileSelect={(file) => {
+                  setSelectedFile(file);
+                  setIsFileMissing(false);
+                }}
+              />
               {selectedFile && (
                 <div className="mt-4 text-sm text-green-700">
-                  선택한 파일: {selectedFile.name} (
+                  selected file: {selectedFile.name} (
                   {(selectedFile.size / 1024).toFixed(1)} KB)
                 </div>
               )}
+              {isFileMissing && (
+                <FormErrorAlert
+                  title="File is required"
+                  description="Please select a file."
+                />
+              )}
             </div>
-            <div className="flex w-full flex-col justify-between px-0 md:flex-row md:p-4">
+            <div className="flex w-full flex-col justify-between gap-4 px-0 md:flex-row md:p-4">
               <Button
                 type="button"
                 variant="outline"
@@ -736,9 +785,9 @@ export default function Start({ loaderData }: Route.ComponentProps) {
             </div>
           </div>
         </div>
-        <div className="hidden h-screen w-[30%] bg-[#f5f6f8] md:block">
-          preview
-        </div>
+        {!isHidden && (
+          <div className="h-screen w-[30%] bg-[#f5f6f8] md:block">preview</div>
+        )}
       </div>
     </div>
   );
@@ -762,7 +811,6 @@ export function DialogSaveDraft({
               You can continue editing it anytime from your dashboard.
             </DialogDescription>
           </DialogHeader>
-
           <DialogFooter>
             <DialogClose asChild>
               <Button

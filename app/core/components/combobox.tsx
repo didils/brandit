@@ -18,6 +18,8 @@ import {
 } from "~/core/components/ui/popover";
 import { cn } from "~/core/lib/utils";
 
+import { FormErrorAlert } from "./ui/form-error-alert";
+
 type ComboboxProps = {
   comboName: string;
   labelName: string;
@@ -25,7 +27,9 @@ type ComboboxProps = {
   dbItem: any[];
   items: any[];
   setItems: React.Dispatch<React.SetStateAction<any[]>>;
-  onManageClick: () => void;
+  onClick: () => void;
+  isApplicantMissing: boolean;
+  isInventorMissing: boolean;
 };
 
 export function Combobox({
@@ -35,7 +39,9 @@ export function Combobox({
   dbItem,
   items,
   setItems,
-  onManageClick,
+  onClick,
+  isApplicantMissing,
+  isInventorMissing,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -73,6 +79,7 @@ export function Combobox({
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between font-normal"
+            onClick={onClick}
           >
             {items.length === 0
               ? `Click to select or add ${comboName}`
@@ -81,6 +88,18 @@ export function Combobox({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
+        {isApplicantMissing && comboName === "applicant" && (
+          <FormErrorAlert
+            title={`Applicant is required`}
+            description={`Please select an applicant.`}
+          />
+        )}
+        {isInventorMissing && comboName === "inventor" && (
+          <FormErrorAlert
+            title={`Inventor is required`}
+            description={`Please select an inventor.`}
+          />
+        )}
         <PopoverContent className="w-full min-w-[360px] p-0 md:min-w-[500px]">
           <Command shouldFilter={true}>
             <CommandInput

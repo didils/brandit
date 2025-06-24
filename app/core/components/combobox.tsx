@@ -30,6 +30,7 @@ type ComboboxProps = {
   onClick: () => void;
   isApplicantMissing: boolean;
   isInventorMissing: boolean;
+  onAddNew?: () => void; // ✅ 추가: "Add new applicant" 클릭 시 실행할 함수
 };
 
 export function Combobox({
@@ -42,6 +43,7 @@ export function Combobox({
   onClick,
   isApplicantMissing,
   isInventorMissing,
+  onAddNew,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -110,10 +112,11 @@ export function Combobox({
               <CommandEmpty>No {comboName} found.</CommandEmpty>
               <CommandGroup>
                 {/* 관리 버튼: 상단 */}
+                {/* ✅ "Add new ..." 버튼 */}
                 <CommandItem
                   onSelect={() => {
-                    // 새로운 신청자 추가 로직 실행
-                    console.log("Add new applicant clicked");
+                    setOpen(false); // 팝오버 닫고
+                    if (onAddNew) onAddNew(); // Sheet 열기 (외부 함수 실행)
                   }}
                   className="w-full max-w-xl min-w-[280px]"
                 >

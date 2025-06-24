@@ -5,20 +5,36 @@
  */
 import type { Route } from "./+types/start";
 
+import { TooltipArrow } from "@radix-ui/react-tooltip";
 import {
   AlertCircleIcon,
   CheckIcon,
   ChevronsUpDownIcon,
+  CircleDollarSignIcon,
   Loader2,
   PlusIcon,
   Terminal,
   XIcon,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { Form, redirect, useNavigate } from "react-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Form,
+  redirect,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+} from "react-router";
 import { toast } from "sonner";
 
+import { ApplicantSheet } from "~/core/components/applicant-sheet";
 import { Combobox } from "~/core/components/combobox";
+import { CompletionEstimator } from "~/core/components/completion-estimator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/core/components/ui/accordion";
 import {
   Alert,
   AlertDescription,
@@ -37,6 +53,15 @@ import {
 } from "~/core/components/ui/alert-dialog";
 import { Button } from "~/core/components/ui/button";
 import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/core/components/ui/card";
+import {
   DialogClose,
   DialogContent,
   DialogFooter,
@@ -49,7 +74,14 @@ import { FileDropzone } from "~/core/components/ui/filedropzone";
 import { FormErrorAlert } from "~/core/components/ui/form-error-alert";
 import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
+import { Separator } from "~/core/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/core/components/ui/tooltip";
 import { browserClient } from "~/core/lib/browser-client";
+import { cn } from "~/core/lib/utils";
 
 export async function loader({ request }: Route.LoaderArgs) {
   //   console.log("🚀 [loader] 실행됨");
@@ -81,10 +113,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     .select("*")
     .eq("user_id", user.id);
 
-  // console.log("🚀 [loader] 실행됨 3", {
-  //   applicants,
-  //   inventors,
-  // });
+  console.log("🚀 [loader] 실행됨 3", {
+    applicants,
+    inventors,
+  });
 
   // ✅ 에러 발생 시 반환
   if (applicantsError || inventorsError) {
@@ -123,6 +155,7 @@ type Applicant = {
   address_kr: string;
   address_en: string;
   residence_country: string;
+  client_code: string;
 };
 
 export type Inventor = {
@@ -166,13 +199,115 @@ export default function Start({ loaderData }: Route.ComponentProps) {
     null,
   );
   const [isUrgent, setIsUrgent] = useState(false);
+  const [estimatedDate, setEstimatedDate] = useState<Date | null>(null);
+  // const [textareaValue, setTextareaValue] = useState("");
+  // ✅ Sheet 열림 상태
+  const [isApplicantSheetOpen, setIsApplicantSheetOpen] = useState(false);
+  const [isInventorSheetOpen, setIsInventorSheetOpen] = useState(false);
   const [staffNote, setStaffNote] = useState("");
   const [clientRequest, setClientRequest] = useState("");
-  const [isHidden, setIsHidden] = useState(false);
+  const [isHidden, setIsHidden] = useResponsiveIsHidden();
   const [isTitleMissing, setIsTitleMissing] = useState(false);
   const [isApplicantMissing, setIsApplicantMissing] = useState(false);
   const [isInventorMissing, setIsInventorMissing] = useState(false);
   const [isFileMissing, setIsFileMissing] = useState(false);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
+  function useResponsiveIsHidden() {
+    const [isHidden, setIsHidden] = useState(false);
+
+    useEffect(() => {
+      // Tailwind의 md(768px 이상)를 기준으로
+      const mediaQuery = window.matchMedia("(max-width: 1280px)");
+
+      const handleResize = () => {
+        setIsHidden(mediaQuery.matches); // true = 숨김 (작은 화면)
+      };
+
+      handleResize(); // 초기 실행
+      mediaQuery.addEventListener("change", handleResize);
+
+      return () => mediaQuery.removeEventListener("change", handleResize);
+    }, []);
+
+    return [isHidden, setIsHidden] as const;
+  }
+
+  // ✅ 총 금액 계산
+  const basePrice = 299;
+  const urgentFee = 79;
+  const totalPrice = isUrgent ? basePrice + urgentFee : basePrice;
+
+  const location = useLocation();
+  const isExpeditedDisabled =
+    selectedApplicants.length === 0 ||
+    selectedApplicants.some(
+      (applicant) =>
+        !applicant.client_code || applicant.client_code.trim() === "",
+    );
+  const tooltipMessage =
+    selectedApplicants.length === 0
+      ? "Select at least one applicant to enable expedited filing."
+      : "Applicants must have a valid client code.\nNew codes take 2–3 business days to issue,\nso expedited filing is not available in those cases.";
+  const navigationType = useNavigationType(); // 'POP' = back/forward, 'PUSH', 'REPLACE'
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // ✅ 좌우 ref가 모두 연결됐는지 체크 (초기 렌더 시점)
+    if (!leftRef.current || !rightRef.current) return;
+
+    const updateRightHeight = () => {
+      // ✅ 매번 실행 시점에서도 체크
+      if (!leftRef.current || !rightRef.current) return;
+
+      const leftHeight = leftRef.current.offsetHeight;
+      rightRef.current.style.height = `${leftHeight}px`;
+    };
+
+    // ✅ 최초 1회 높이 동기화
+    updateRightHeight();
+
+    // ✅ 좌측 요소 감지 및 동기화
+    const observer = new ResizeObserver(() => {
+      updateRightHeight(); // 내부에서도 매번 null-safe 체크 포함됨
+    });
+
+    observer.observe(leftRef.current);
+
+    // ✅ 클린업
+    return () => {
+      observer.disconnect();
+    };
+  }, [leftRef.current, rightRef.current]); // ✅ 안전하게 리렌더링 대응
+
+  useEffect(() => {
+    const wasJustSubmitted = sessionStorage.getItem("submitted-provisional");
+    if (wasJustSubmitted === "true") {
+      sessionStorage.removeItem("submitted-provisional");
+      navigate("/dashboard/provisional-applications", { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    // 1. 컴포넌트 마운트 시 더미 히스토리 스택 쌓기
+    window.history.pushState({ modalOpen: false }, "");
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 2. 뒤로가기가 눌리면 모달 오픈
+      setIsCanceled(true);
+
+      // 3. 이동 "되돌리기" - 현재 URL을 다시 push
+      navigate(location.pathname, { replace: true });
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [location, navigate]);
+
   // ✅ 브라우저 환경에서만 browserClient를 초기화
   useEffect(() => {
     // console.log("🚀 [useEffect] 실행됨");
@@ -459,12 +594,15 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               type: selectedFile?.type,
             },
           ],
+          p_client_request: clientRequest, // ✅ 추가
+          p_is_urgent: isUrgent, // ✅ 추가
         },
       );
       if (error) {
         toast.error("Upload failed");
       } else {
         setIsSubmittingCheckout(false);
+        sessionStorage.setItem("submitted-provisional", "true");
         navigate("/dashboard/provisional-applications");
       }
     }
@@ -529,6 +667,8 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               type: selectedFile?.type,
             },
           ],
+          p_client_request: clientRequest,
+          p_is_urgent: isUrgent,
         },
       );
 
@@ -538,6 +678,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
         toast.error("업데이트 실패");
       } else {
         console.log("✅ provisional 업데이트 완료", data);
+        sessionStorage.setItem("submitted-provisional", "true");
         setIsSubmittingCheckout(false);
         navigate("/dashboard/provisional-applications");
       }
@@ -649,8 +790,11 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       </div>
-      <div className="flex w-full flex-row items-start justify-center gap-20">
-        <div className="flex w-[70%] flex-col items-start gap-10 space-y-5 pt-10 pb-20">
+      <div className="flex min-h-screen w-full flex-row items-stretch justify-center gap-20">
+        <div
+          ref={leftRef}
+          className="flex w-[65%] flex-col items-start gap-10 space-y-5 pt-10 pb-20"
+        >
           <div className="mx-auto flex flex-col items-start gap-10 space-y-2">
             <SaveDraftAlert
               isOpen={isCanceled}
@@ -711,6 +855,10 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               }}
               isApplicantMissing={isApplicantMissing}
               isInventorMissing={isInventorMissing}
+              onAddNew={() => {
+                setIsApplicantSheetOpen(true);
+                console.log("ApplicantSheet opened");
+              }}
             />
             <div>
               <Combobox
@@ -723,6 +871,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 onClick={() => setIsInventorMissing(false)}
                 isApplicantMissing={isApplicantMissing}
                 isInventorMissing={isInventorMissing}
+                onAddNew={() => setIsInventorSheetOpen(true)}
               />
             </div>
             <div className="flex flex-col items-start">
@@ -743,7 +892,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 }}
               />
               {selectedFile && (
-                <div className="mt-4 text-sm text-green-700">
+                <div className="mt-4 max-w-xl text-sm text-green-700">
                   selected file: {selectedFile.name} (
                   {(selectedFile.size / 1024).toFixed(1)} KB)
                 </div>
@@ -755,40 +904,236 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 />
               )}
             </div>
-            <div className="flex w-full flex-col justify-between gap-4 px-0 md:flex-row md:p-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="min-w-[250px] rounded-md p-3 font-medium"
-                onClick={() => handleUpload("draft")}
-                disabled={isSubmittingDraft}
-              >
-                {isSubmittingDraft ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "Save Draft"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                className="min-w-[250px] rounded-md p-3 font-medium"
-                onClick={() => handleUpload("checkout")}
-                disabled={isSubmittingCheckout}
-              >
-                {isSubmittingCheckout ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "Checkout"
-                )}
-              </Button>
+            <div className="mt-6 w-full max-w-xl">
+              <Label className="text-lg">Need it urgently?</Label>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Standard processing takes 3–4 business days. If you need it
+                sooner, choose expedited processing and we’ll handle it within 1
+                business day for an additional $79.
+              </p>
+
+              <div className="mt-3 flex flex-col gap-2">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="urgency"
+                    value="standard"
+                    checked={!isUrgent}
+                    onChange={() => setIsUrgent(false)}
+                    className="accent-blue-600"
+                  />
+                  <span className="text-sm">
+                    Standard (3–4 business days, no extra charge)
+                  </span>
+                </label>
+                <div
+                  className="relative inline-block"
+                  onMouseEnter={() => setIsTooltipVisible(true)}
+                  onMouseLeave={() => setIsTooltipVisible(false)}
+                >
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      name="urgency"
+                      value="expedited"
+                      checked={isUrgent}
+                      onChange={() => setIsUrgent(true)}
+                      className="accent-blue-600"
+                      disabled={isExpeditedDisabled}
+                    />
+                    <span
+                      className={cn(
+                        "text-sm font-medium",
+                        isExpeditedDisabled
+                          ? "text-muted-foreground"
+                          : "text-primary",
+                      )}
+                    >
+                      Expedited (+$79, processed within 1 business day)
+                    </span>
+                  </label>
+
+                  {isExpeditedDisabled && isTooltipVisible && (
+                    <div className="absolute top-full left-0 z-50 mt-2 w-[420px] rounded-md bg-[#FBEAEA] px-3 py-2 text-sm text-[#E2584D] shadow-md">
+                      {tooltipMessage}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <CompletionEstimator
+                isUrgent={isUrgent}
+                onEstimate={(date) => {
+                  setEstimatedDate(date);
+                }}
+              />
             </div>
+            <div className="flex w-full flex-col items-start">
+              <Label
+                htmlFor="clientRequest"
+                className="flex flex-col items-start text-lg"
+              >
+                Request or memo to the staff
+              </Label>
+              <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                You can include specific instructions, deadlines, or internal
+                references for our team.
+              </small>
+              <textarea
+                id="clientRequest"
+                name="clientRequest"
+                placeholder="e.g., This is urgent for our upcoming launch. Please prioritize if possible."
+                className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full max-w-xl min-w-[280px] rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                rows={4}
+                value={clientRequest}
+                onChange={(e) => setClientRequest(e.target.value)}
+              />
+            </div>
+
+            {isHidden && (
+              <div className="flex w-full flex-col justify-between gap-4 px-0 md:flex-row md:p-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-w-[250px] rounded-md p-3 font-medium"
+                  onClick={() => handleUpload("draft")}
+                  disabled={isSubmittingDraft}
+                >
+                  {isSubmittingDraft ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Save Draft"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  className="min-w-[250px] rounded-md p-3 font-medium"
+                  onClick={() => handleUpload("checkout")}
+                  disabled={isSubmittingCheckout}
+                >
+                  {isSubmittingCheckout ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Checkout"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
         {!isHidden && (
-          <div className="h-screen w-[30%] bg-[#f5f6f8] md:block">preview</div>
+          <div ref={rightRef} className="w-[35%] bg-[#f5f6f8] px-10 pt-5 pb-7">
+            <div className="sticky top-9">
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle>Provisional Patent Application (KIPO)</CardTitle>
+                  <CardDescription>
+                    A comprehensive service covering all essential steps to file
+                    a provisional application with the Korean Intellectual
+                    Property Office.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent>
+                  {/* 업무 상세 보기 아코디언 */}
+                  <Accordion type="single" collapsible className="w-full pb-2">
+                    <AccordionItem value="details">
+                      <AccordionTrigger className="text-muted-foreground text-sm font-medium">
+                        View service details
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="text-muted-foreground space-y-2 pl-0 text-sm">
+                          {[
+                            "Apply for Patent Client Code",
+                            "Complete Power of Attorney (POA) for patent attorney representation",
+                            "Review of draft specification and drawings",
+                            "File provisional application to KIPO (The Korean Intellectual Property Office) via online platform",
+                            "Receive and review official filing receipt",
+                            "Report filing result to client with submission confirmation",
+                            "Provide guidance on post-filing amendments (if needed)",
+                            "Send reminder for regular application within 12 months",
+                            // ✅ 추가 항목
+                            "Draft and provide priority claim statement for regular application",
+                          ].map((task, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <CheckIcon className="mt-1 h-4 w-4 flex-shrink-0 self-start text-green-600" />
+                              <span>{task}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  {/* 비용 정보 */}
+                  <div className="text-muted-foreground mt-5 flex justify-between px-2 text-sm">
+                    <span>subtotal:</span>
+                    <span className="text-sm font-light">${basePrice}</span>
+                  </div>
+
+                  {/* Urgent 옵션 */}
+                  {isUrgent && (
+                    <>
+                      <hr className="my-6 border-gray-300" />
+                      <div className="text-muted-foreground flex justify-between px-2 text-sm">
+                        <span>⚡ Urgent filing (within 1 business day)</span>
+                        <span className="text-sm font-light">
+                          +${urgentFee}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  <Separator className="my-6" />
+
+                  {/* 총 금액 */}
+                  <div className="text-black-300 mt-6 flex justify-between px-2 text-sm font-medium">
+                    <span className="text-black-300 text-md font-light">
+                      Total Fee:
+                    </span>
+                    <span className="text-black-300 text-md font-semibold">
+                      ${totalPrice}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="mt-3 flex w-full flex-col items-center justify-center gap-3 px-0 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-7/9 rounded-md p-3 font-medium"
+                  onClick={() => handleUpload("draft")}
+                  disabled={isSubmittingDraft}
+                >
+                  {isSubmittingDraft ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Save Draft"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  className="w-7/9 rounded-md p-3 font-medium"
+                  onClick={() => handleUpload("checkout")}
+                  disabled={isSubmittingCheckout}
+                >
+                  {isSubmittingCheckout ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Checkout"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
+      <ApplicantSheet
+        isOpen={isApplicantSheetOpen}
+        onOpenChange={setIsApplicantSheetOpen}
+      />
     </div>
   );
 }
@@ -838,6 +1183,7 @@ export function SaveDraftAlert({
   onSaveDraft: () => void;
   onLeaveWithoutSaving: () => void;
 }) {
+  const navigate = useNavigate();
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -860,7 +1206,7 @@ export function SaveDraftAlert({
           <AlertDialogAction
             onClick={() => {
               onOpenChange(false);
-              onLeaveWithoutSaving();
+              navigate("/applications/provisional-application");
             }}
           >
             Leave without saving

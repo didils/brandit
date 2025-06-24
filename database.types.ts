@@ -513,6 +513,15 @@ export type Database = {
               p_applicant: Json
               p_inventor: Json
               p_attached_files: Json
+              p_client_request: string
+              p_is_urgent: boolean
+            }
+          | {
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
               p_status: string
             }
         Returns: {
@@ -531,14 +540,25 @@ export type Database = {
         }[]
       }
       update_provisional_application: {
-        Args: {
-          p_patent_id: string
-          p_user_id: string
-          p_title_en: string
-          p_applicant: Json
-          p_inventor: Json
-          p_attached_files: Json
-        }
+        Args:
+          | {
+              p_patent_id: string
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+            }
+          | {
+              p_patent_id: string
+              p_user_id: string
+              p_title_en: string
+              p_applicant: Json
+              p_inventor: Json
+              p_attached_files: Json
+              p_client_request: string
+              p_is_urgent: boolean
+            }
         Returns: {
           patent_id: string
           our_ref: string

@@ -1,3 +1,4 @@
+import { AlertCircleIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/core/components/ui/button";
@@ -18,14 +19,38 @@ import {
 } from "~/core/components/ui/tabs";
 import { browserClient } from "~/core/lib/browser-client";
 
-// 경로는 실제 프로젝트에 맞게 조정
+import { ImageDropzone } from "./imagedropzone";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { FileDropzone } from "./ui/filedropzone";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+
+const countries = [
+  { name: "United States", code: "US" },
+  { name: "South Korea", code: "KR" },
+  { name: "European Union", code: "EU" },
+  { name: "China", code: "CN" },
+  { name: "Japan", code: "JP" },
+];
 
 export function ApplicantSheet({
   isOpen,
   onOpenChange,
+  selectedCountry,
+  setSelectedCountry,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedCountry: string;
+  setSelectedCountry: (country: string) => void;
 }) {
   // ✅ 공통 입력값
   const [entityType, setEntityType] = useState<"person" | "company">("person");
@@ -34,6 +59,9 @@ export function ApplicantSheet({
   const [signatureUrl, setSignatureUrl] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [delegationType, setDelegationType] = useState<"simple" | "standard">(
+    "simple",
+  );
 
   // ✅ 법인 전용
   const [signerPosition, setSignerPosition] = useState("");
@@ -41,6 +69,7 @@ export function ApplicantSheet({
   const [representativeName, setRepresentativeName] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
+  const [customCountry, setCustomCountry] = useState("");
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -100,7 +129,7 @@ export function ApplicantSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="!w-[600px] !max-w-[600px] overflow-y-auto"
+        className="mb-10 !w-[600px] !max-w-[600px] overflow-y-auto pb-10"
       >
         <SheetHeader>
           <SheetTitle>Add New Applicant</SheetTitle>
@@ -116,61 +145,9 @@ export function ApplicantSheet({
             onValueChange={(v) => setEntityType(v as "person" | "company")}
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="person">Individual</TabsTrigger>
               <TabsTrigger value="company">Corporation</TabsTrigger>
+              <TabsTrigger value="person">Individual</TabsTrigger>
             </TabsList>
-
-            {/* ✅ Individual input form */}
-            <TabsContent value="person" className="mt-8 space-y-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <Label>First Name</Label>
-                  <small className="text-muted-foreground">
-                    Your given name as shown on your passport or ID
-                  </small>
-                  <Input
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="e.g., John"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label>Last Name</Label>
-                  <small className="text-muted-foreground">
-                    Your family name or surname
-                  </small>
-                  <Input
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="e.g., Smith"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label>Address (English)</Label>
-                <small className="text-muted-foreground">
-                  Full mailing address in English
-                </small>
-                <Input
-                  value={addressEn}
-                  onChange={(e) => setAddressEn(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label>Signature Image URL</Label>
-                <Input
-                  value={signatureUrl}
-                  onChange={(e) => setSignatureUrl(e.target.value)}
-                />
-                <small className="text-muted-foreground">
-                  Link to a PNG or JPG image of your signature
-                </small>
-              </div>
-            </TabsContent>
-
             {/* ✅ Corporation input form */}
             <TabsContent value="company" className="mt-4 space-y-4">
               <div className="flex flex-col gap-1">
@@ -183,7 +160,16 @@ export function ApplicantSheet({
                   Must match the name on your business registration
                 </small>
               </div>
-
+              <div className="flex flex-col gap-1">
+                <Label>Company Name (English)</Label>
+                <Input
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                />
+                <small className="text-muted-foreground">
+                  Must match the name on your business registration
+                </small>
+              </div>
               <div className="flex flex-col gap-1">
                 <Label>Address (English)</Label>
                 <Input
@@ -239,8 +225,161 @@ export function ApplicantSheet({
                 />
               </div>
             </TabsContent>
-          </Tabs>
 
+            {/* ✅ Individual input form */}
+
+            <TabsContent value="person" className="mt-8 space-y-4">
+              {/* ✅ 국가 선택 */}
+              <div className="flex flex-col gap-1">
+                <Label>Nationality of the applicant</Label>
+                <div className="flex w-full flex-row justify-between gap-1">
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === "etc") {
+                        setSelectedCountry("etc"); // 초기화 (선택된 국가 없음)
+                      } else {
+                        setSelectedCountry(value); // 일반 국가 선택 시 설정
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder="Select a country"
+                        // value는 외부에서 관리하므로 selectedCountry 사용
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Nationality of the applicant</SelectLabel>
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="etc">Other nationality</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+
+                  {/* ❗ "기타 국가"를 선택했을 때만 input 표시 */}
+                  {selectedCountry === "etc" && (
+                    <Input
+                      placeholder="Enter nationality"
+                      value={customCountry}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setCustomCountry(inputValue);
+                        //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>
+                  Nationality should match the country of the address.
+                </AlertTitle>
+                <AlertDescription>
+                  <p>
+                    Please ensure that the applicant's nationality corresponds
+                    to the country of their address.
+                  </p>
+                  <ul className="list-inside list-disc text-sm">
+                    <li>
+                      For example, if the address is in the United States, the
+                      nationality should also be set to the U.S.
+                    </li>
+                    <li>
+                      If the nationality differs from the address country,
+                      please review the information carefully before proceeding.
+                    </li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+              {/* ✅ 이름 입력 */}
+              <div className="flex flex-row justify-between gap-2">
+                <div className="flex w-1/2 flex-col gap-1">
+                  <Label>First Name</Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="e.g., John"
+                  />
+                </div>
+
+                <div className="flex w-1/2 flex-col gap-1">
+                  <Label>Last Name</Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="e.g., Smith"
+                  />
+                </div>
+              </div>
+
+              {/* ✅ 주소 입력 */}
+              <div className="flex flex-col gap-1">
+                <Label>Address (English)</Label>
+                <small className="text-muted-foreground">
+                  Full mailing address in English
+                </small>
+                <Input
+                  value={addressEn}
+                  onChange={(e) => setAddressEn(e.target.value)}
+                />
+              </div>
+              {/* ✅ 서명 이미지 URL */}
+              <div className="flex flex-col gap-1">
+                <Label>Signature Image URL</Label>
+                <Input
+                  value={signatureUrl}
+                  onChange={(e) => setSignatureUrl(e.target.value)}
+                />
+                <small className="text-muted-foreground">
+                  Link to a PNG or JPG image of your signature
+                </small>
+              </div>
+            </TabsContent>
+          </Tabs>
+          <div className="mt-6 flex flex-col gap-4">
+            <RadioGroup
+              defaultValue="simple"
+              onValueChange={(value) =>
+                setDelegationType(value as "simple" | "standard")
+              }
+            >
+              {/* ✅ 간편 위임 옵션 */}
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="simple" id="simple" />
+                <div>
+                  <Label htmlFor="simple">Simple Power of Attorney</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Upload a signature image to submit a simplified Power of
+                    Attorney.
+                  </p>
+                </div>
+              </div>
+
+              {/* ✅ 일반 위임 옵션 */}
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value="standard" id="standard" />
+                <div>
+                  <Label htmlFor="formal">Formal Power of Attorney</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Download the POA form, sign it, and upload the signed PDF.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+
+            {/* ✅ 선택된 위임 방식에 따라 컴포넌트 출력 */}
+            {delegationType === "simple" ? (
+              <ImageDropzone onFileSelect={() => {}} />
+            ) : (
+              <FileDropzone onFileSelect={() => {}} />
+            )}
+          </div>
           <div className="mt-6">
             <Button
               onClick={handleSave}

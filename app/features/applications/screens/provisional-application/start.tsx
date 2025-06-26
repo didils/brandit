@@ -180,6 +180,7 @@ export type Inventor = {
 
 export default function Start({ loaderData }: Route.ComponentProps) {
   // console.log("🚀 [Start] 실행됨");
+
   const [supabase, setSupabase] = useState<typeof browserClient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -212,6 +213,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const [isInventorMissing, setIsInventorMissing] = useState(false);
   const [isFileMissing, setIsFileMissing] = useState(false);
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   function useResponsiveIsHidden() {
     const [isHidden, setIsHidden] = useState(false);
@@ -1133,6 +1135,8 @@ export default function Start({ loaderData }: Route.ComponentProps) {
       <ApplicantSheet
         isOpen={isApplicantSheetOpen}
         onOpenChange={setIsApplicantSheetOpen}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
       />
     </div>
   );

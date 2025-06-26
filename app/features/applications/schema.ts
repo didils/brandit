@@ -118,6 +118,9 @@ export const entities = pgTable("entities", {
   address_kr: text(),
   address_en: text(),
 
+  // 🔹 국가 (거주 또는 설립 국가)
+  country: text(), // 예: "KR", "US", "JP" 등 ISO 3166-1 alpha-2 코드 권장
+
   // 🔹 변리사 위임 정보
   has_poa: boolean().default(false), // 위임 여부
   signature_image_url: text(), // 서명 이미지 URL

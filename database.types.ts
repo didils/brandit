@@ -14,6 +14,7 @@ export type Database = {
           address_en: string | null
           address_kr: string | null
           client_code: string | null
+          country: string | null
           created_at: string
           has_poa: boolean | null
           id: string
@@ -30,6 +31,7 @@ export type Database = {
           address_en?: string | null
           address_kr?: string | null
           client_code?: string | null
+          country?: string | null
           created_at?: string
           has_poa?: boolean | null
           id?: string
@@ -46,6 +48,7 @@ export type Database = {
           address_en?: string | null
           address_kr?: string | null
           client_code?: string | null
+          country?: string | null
           created_at?: string
           has_poa?: boolean | null
           id?: string

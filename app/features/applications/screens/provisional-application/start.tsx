@@ -223,6 +223,8 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const [isFileMissing, setIsFileMissing] = useState(false);
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [addressEn, setAddressEn] = useState("");
 
   function useResponsiveIsHidden() {
     const [isHidden, setIsHidden] = useState(false);
@@ -1169,6 +1171,11 @@ export default function Start({ loaderData }: Route.ComponentProps) {
         setShowCropper={setShowCropper}
         croppedImage={croppedImage}
         setCroppedImage={setCroppedImage}
+        title={title}
+        nameEn={nameEn}
+        addressEn={addressEn}
+        setNameEn={setNameEn}
+        setAddressEn={setAddressEn}
       />
     </div>
   );

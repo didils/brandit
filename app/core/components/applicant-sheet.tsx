@@ -1,4 +1,4 @@
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, FileCheck2Icon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/core/components/ui/button";
@@ -21,6 +21,14 @@ import { browserClient } from "~/core/lib/browser-client";
 
 import { ImageDropzone } from "./imagedropzone";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 import { FileDropzone } from "./ui/filedropzone";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import {
@@ -340,69 +348,111 @@ export function ApplicantSheet({
               </div>
             </TabsContent>
           </Tabs>
-          <div className="mt-6 flex flex-col gap-4">
-            <RadioGroup
-              defaultValue="simple"
-              onValueChange={(value) =>
-                setDelegationType(value as "simple" | "standard")
-              }
-            >
-              {/* ✅ 간편 위임 옵션 */}
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="simple" id="simple" />
-                <div>
-                  <Label htmlFor="simple">Simple Power of Attorney</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Upload a signature image to submit a simplified Power of
-                    Attorney.
-                  </p>
-                </div>
-              </div>
+          <div className="flex flex-col gap-1">
+            <Label>Delegation Method</Label>
+            <small className="text-muted-foreground">
+              Select the appropriate method to grant Power of Attorney
+            </small>
 
-              {/* ✅ 일반 위임 옵션 */}
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value="standard" id="standard" />
-                <div>
-                  <Label htmlFor="formal">Formal Power of Attorney</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Download the POA form, sign it, and upload the signed PDF.
-                  </p>
-                </div>
-              </div>
-            </RadioGroup>
+            <Tabs defaultValue="digital" className="flex flex-col gap-4">
+              {/* ✅ 위임 유형 선택 Tabs */}
+              <TabsList className="w-full justify-around">
+                <TabsTrigger value="digital">
+                  <div className="flex flex-col items-center">
+                    <Label>Digital Authorization</Label>
+                    {/* <p className="text-muted-foreground text-center text-sm">
+                      Use an uploaded signature image to authorize
+                      electronically.
+                    </p> */}
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="paper">
+                  <div className="flex flex-col items-center">
+                    <Label>Paper-Based Authorization</Label>
+                    {/* <p className="text-muted-foreground text-center text-sm">
+                      Submit a scanned PDF after printing and signing the POA
+                      form.
+                    </p> */}
+                  </div>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* ✅ 선택된 위임 방식에 따라 컴포넌트 출력 */}
-            {delegationType === "simple" ? (
-              croppedImage ? (
-                // ✅ rawImage가 존재할 경우: 이미지 미리보기
-                <div className="relative w-full max-w-xs">
-                  <img
-                    src={URL.createObjectURL(croppedImage)}
-                    alt="미리보기 이미지"
-                    className="w-full rounded border object-contain shadow"
-                  />
-                  <Button
-                    variant="ghost"
-                    onClick={() => setCroppedImage(null)} // ❌ 초기화
-                    className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
-                  >
-                    Re-select
-                  </Button>
-                </div>
-              ) : (
-                // ✅ rawImage가 없을 경우: 이미지 업로드 UI
-                <ImageDropzone
-                  rawImage={rawImage}
-                  setRawImage={setRawImage}
-                  finalImage={finalImage}
-                  setFinalImage={setFinalImage}
-                  showEditor={showEditor}
-                  setShowEditor={setShowEditor}
-                />
-              )
-            ) : (
-              <FileDropzone onFileSelect={() => {}} />
-            )}
+              {/* ✅ 디지털 위임 탭: 이미지 업로드 */}
+              <TabsContent value="digital">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Digital Authorization</CardTitle>
+                    <CardDescription>
+                      Upload a signature image to instantly authorize via
+                      electronic Power of Attorney.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-6">
+                    <div className="grid gap-3">
+                      <Label htmlFor="tabs-demo-name">Signature Image</Label>
+                      {croppedImage ? (
+                        <div className="relative w-full max-w-xs">
+                          <img
+                            src={URL.createObjectURL(croppedImage)}
+                            alt="미리보기 이미지"
+                            className="w-full rounded border object-contain shadow"
+                          />
+                          <Button
+                            variant="ghost"
+                            onClick={() => setCroppedImage(null)} // ❌ 이미지 초기화
+                            className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
+                          >
+                            Re-select
+                          </Button>
+                        </div>
+                      ) : (
+                        <ImageDropzone
+                          rawImage={rawImage}
+                          setRawImage={setRawImage}
+                          finalImage={finalImage}
+                          setFinalImage={setFinalImage}
+                          showEditor={showEditor}
+                          setShowEditor={setShowEditor}
+                        />
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-row justify-end">
+                    <Button variant="outline">
+                      <FileCheck2Icon />
+                      Generate POA with this signature
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* ✅ 종이 기반 위임 탭: PDF 업로드 */}
+              <TabsContent value="paper">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Paper-Based Authorization</CardTitle>
+                    <CardDescription>
+                      Download the Power of Attorney form, sign it manually, and
+                      upload a scanned PDF.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-6">
+                    <div className="grid gap-3">
+                      <Label htmlFor="tabs-demo-pdf">
+                        Signed POA Document (PDF)
+                      </Label>
+                      <FileDropzone onFileSelect={() => {}} />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-row justify-end">
+                    <Button variant="outline">
+                      <FileCheck2Icon />
+                      Upload Completed POA
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
           <div className="mt-6">
             <Button

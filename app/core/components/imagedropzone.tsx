@@ -92,7 +92,7 @@ export const ImageDropzone = ({
       }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
-      className={`mt-3 flex h-30 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition ${
+      className={`flex h-23 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition ${
         isDragging ? "border-blue-500 bg-blue-50" : "max-w-xl border-gray-300"
       } `}
     >

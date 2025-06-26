@@ -1,10 +1,22 @@
 import { type DragEvent, useState } from "react";
 
 type ImageDropzoneProps = {
-  onFileSelect: (file: File) => void;
+  rawImage: File | null;
+  setRawImage: (image: File | null) => void;
+  finalImage: File | null;
+  setFinalImage: (image: File | null) => void;
+  showEditor: boolean;
+  setShowEditor: (show: boolean) => void;
 };
 
-export const ImageDropzone = ({ onFileSelect }: ImageDropzoneProps) => {
+export const ImageDropzone = ({
+  rawImage,
+  setRawImage,
+  finalImage,
+  setFinalImage,
+  showEditor,
+  setShowEditor,
+}: ImageDropzoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +64,8 @@ export const ImageDropzone = ({ onFileSelect }: ImageDropzoneProps) => {
     }
 
     setError(null);
-    onFileSelect(file);
+    setRawImage(file);
+    setShowEditor(true);
   };
 
   // 클릭 업로드 처리
@@ -67,7 +80,8 @@ export const ImageDropzone = ({ onFileSelect }: ImageDropzoneProps) => {
     }
 
     setError(null);
-    onFileSelect(file);
+    setRawImage(file);
+    setShowEditor(true);
   };
 
   return (

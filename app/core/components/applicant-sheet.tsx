@@ -46,11 +46,31 @@ export function ApplicantSheet({
   onOpenChange,
   selectedCountry,
   setSelectedCountry,
+  rawImage,
+  setRawImage,
+  finalImage,
+  setFinalImage,
+  showEditor,
+  setShowEditor,
+  showCropper,
+  setShowCropper,
+  croppedImage,
+  setCroppedImage,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCountry: string;
   setSelectedCountry: (country: string) => void;
+  rawImage: File | null;
+  setRawImage: (image: File | null) => void;
+  finalImage: File | null;
+  setFinalImage: (image: File | null) => void;
+  showEditor: boolean;
+  setShowEditor: (show: boolean) => void;
+  showCropper: boolean;
+  setShowCropper: (show: boolean) => void;
+  croppedImage: File | null;
+  setCroppedImage: (image: File | null) => void;
 }) {
   // ✅ 공통 입력값
   const [entityType, setEntityType] = useState<"person" | "company">("person");
@@ -178,17 +198,6 @@ export function ApplicantSheet({
                 />
                 <small className="text-muted-foreground">
                   Full address of the company headquarters
-                </small>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label>Signature Image URL</Label>
-                <Input
-                  value={signatureUrl}
-                  onChange={(e) => setSignatureUrl(e.target.value)}
-                />
-                <small className="text-muted-foreground">
-                  URL to the corporate seal or signature image
                 </small>
               </div>
 
@@ -329,17 +338,6 @@ export function ApplicantSheet({
                   onChange={(e) => setAddressEn(e.target.value)}
                 />
               </div>
-              {/* ✅ 서명 이미지 URL */}
-              <div className="flex flex-col gap-1">
-                <Label>Signature Image URL</Label>
-                <Input
-                  value={signatureUrl}
-                  onChange={(e) => setSignatureUrl(e.target.value)}
-                />
-                <small className="text-muted-foreground">
-                  Link to a PNG or JPG image of your signature
-                </small>
-              </div>
             </TabsContent>
           </Tabs>
           <div className="mt-6 flex flex-col gap-4">
@@ -375,7 +373,33 @@ export function ApplicantSheet({
 
             {/* ✅ 선택된 위임 방식에 따라 컴포넌트 출력 */}
             {delegationType === "simple" ? (
-              <ImageDropzone onFileSelect={() => {}} />
+              croppedImage ? (
+                // ✅ rawImage가 존재할 경우: 이미지 미리보기
+                <div className="relative w-full max-w-xs">
+                  <img
+                    src={URL.createObjectURL(croppedImage)}
+                    alt="미리보기 이미지"
+                    className="w-full rounded border object-contain shadow"
+                  />
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCroppedImage(null)} // ❌ 초기화
+                    className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
+                  >
+                    Re-select
+                  </Button>
+                </div>
+              ) : (
+                // ✅ rawImage가 없을 경우: 이미지 업로드 UI
+                <ImageDropzone
+                  rawImage={rawImage}
+                  setRawImage={setRawImage}
+                  finalImage={finalImage}
+                  setFinalImage={setFinalImage}
+                  showEditor={showEditor}
+                  setShowEditor={setShowEditor}
+                />
+              )
             ) : (
               <FileDropzone onFileSelect={() => {}} />
             )}

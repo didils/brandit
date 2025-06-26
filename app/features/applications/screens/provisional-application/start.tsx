@@ -26,6 +26,7 @@ import {
 } from "react-router";
 import { toast } from "sonner";
 
+import ImageCropper from "~/core/components/ImageCropper";
 import { ApplicantSheet } from "~/core/components/applicant-sheet";
 import { Combobox } from "~/core/components/combobox";
 import { CompletionEstimator } from "~/core/components/completion-estimator";
@@ -180,7 +181,15 @@ export type Inventor = {
 
 export default function Start({ loaderData }: Route.ComponentProps) {
   // console.log("🚀 [Start] 실행됨");
+  // 예시 코드
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [croppedImage, setCroppedImage] = useState<File | null>(null);
 
+  const handleImageSelect = (file: File) => {
+    setImageFile(file);
+    setShowCropper(true);
+  };
   const [supabase, setSupabase] = useState<typeof browserClient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -729,6 +738,15 @@ export default function Start({ loaderData }: Route.ComponentProps) {
 
   return (
     <div>
+      {showCropper && imageFile && (
+        <ImageCropper
+          imageFile={imageFile}
+          onCancel={() => setShowCropper(false)}
+          croppedImage={croppedImage}
+          setCroppedImage={setCroppedImage}
+          setShowCropper={setShowCropper}
+        />
+      )}
       <div className="flex w-full flex-row items-center justify-between bg-[#0e3359] px-4 py-1.5">
         <h1 className="text-md text-center font-medium text-white">
           Provisional Application
@@ -1134,9 +1152,23 @@ export default function Start({ loaderData }: Route.ComponentProps) {
       </div>
       <ApplicantSheet
         isOpen={isApplicantSheetOpen}
-        onOpenChange={setIsApplicantSheetOpen}
+        onOpenChange={(nextOpen) => {
+          // ✅ 이미지 편집 중이면 Sheet 닫힘 방지
+          if (showCropper) return;
+          setIsApplicantSheetOpen(nextOpen);
+        }}
         selectedCountry={selectedCountry}
         setSelectedCountry={setSelectedCountry}
+        rawImage={imageFile}
+        setRawImage={setImageFile}
+        finalImage={croppedImage}
+        setFinalImage={setCroppedImage}
+        showEditor={showCropper}
+        setShowEditor={setShowCropper}
+        showCropper={showCropper}
+        setShowCropper={setShowCropper}
+        croppedImage={croppedImage}
+        setCroppedImage={setCroppedImage}
       />
     </div>
   );

@@ -1,5 +1,6 @@
-import { AlertCircleIcon, FileCheck2Icon } from "lucide-react";
+import { AlertCircleIcon, FileCheck2Icon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "~/core/components/ui/button";
 import { Input } from "~/core/components/ui/input";
@@ -18,6 +19,9 @@ import {
   TabsTrigger,
 } from "~/core/components/ui/tabs";
 import { browserClient } from "~/core/lib/browser-client";
+
+import { generatePOAClient } from "../lib/generate-pdf.client";
+// import { generatePOAClient } from "~/features/applications/screens/provisional-application/start";
 
 import { ImageDropzone } from "./imagedropzone";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
@@ -98,6 +102,7 @@ export function ApplicantSheet({
   const [delegationType, setDelegationType] = useState<"simple" | "standard">(
     "simple",
   );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // ✅ 법인 전용
   const [signerPosition, setSignerPosition] = useState("");
@@ -106,6 +111,17 @@ export function ApplicantSheet({
 
   const [isLoading, setIsLoading] = useState(false);
   const [customCountry, setCustomCountry] = useState("");
+
+  const handleGeneratePdf = async () => {
+    const file = await generatePOAClient({
+      elementId: "pdf-area",
+      filename: "POA.pdf",
+    });
+    console.log("pdf", file);
+    if (file) {
+      setSelectedFile(file as unknown as File);
+    }
+  };
 
   useEffect(() => {
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
@@ -450,19 +466,64 @@ export function ApplicantSheet({
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-row justify-end">
-                      <Button
-                        onClick={async () => {
-                          const { generatePOAClient } = await import(
-                            "~/core/lib/generate-pdf.client"
-                          );
-                          generatePOAClient({
-                            elementId: "pdf-area",
-                            filename: `POA_${nameEn}.pdf`,
-                          });
-                        }}
-                      >
-                        Generate POA
-                      </Button>
+                      <div className="flex flex-col items-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={async () => {
+                            // ✅ 조건 검사
+                            if (!croppedImage) {
+                              toast.error("Signature image is required.");
+                              return;
+                            }
+
+                            if (!nameEn || nameEn.trim() === "") {
+                              toast.error("Please enter the applicant's name.");
+                              return;
+                            }
+
+                            if (!addressEn || addressEn.trim() === "") {
+                              toast.error(
+                                "Please enter the applicant's address.",
+                              );
+                              return;
+                            }
+
+                            // ✅ 문제 없을 경우 PDF 생성
+                            handleGeneratePdf();
+                            // generatePOAClient({
+                            //   elementId: "pdf-area",
+                            //   filename: `POA_${nameEn}.pdf`,
+                            // });
+                          }}
+                        >
+                          <FileCheck2Icon className="mr-2" /> Generate POA with
+                          uploaded signature
+                        </Button>
+                        {selectedFile && (
+                          <div className="flex flex-row items-center gap-1 text-sm font-light text-green-600">
+                            {/* 클릭 시 새 탭으로 미리보기 */}
+                            <div
+                              className="cursor-pointer hover:underline"
+                              onClick={() => {
+                                const url = URL.createObjectURL(selectedFile);
+                                window.open(url, "_blank");
+                              }}
+                            >
+                              <strong>{selectedFile.name}</strong> (
+                              {(selectedFile.size / 1024).toFixed(1)} KB)
+                            </div>
+
+                            {/* X 아이콘 클릭 시 삭제 */}
+                            <button
+                              onClick={() => setSelectedFile(null)}
+                              className="text-green-600 hover:text-red-700"
+                              aria-label="Remove file"
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </CardFooter>
                   </Card>
                 </TabsContent>
@@ -506,95 +567,96 @@ export function ApplicantSheet({
             </div>
           </div>
         </SheetContent>
-      </Sheet>
-      <div
-        id="pdf-area"
-        className="pointer-events-none absolute top-0 left-0 z-[-9999] min-h-[297mm] w-[210mm] bg-white p-10 font-serif text-sm text-black"
-      >
-        <div className="flex flex-col gap-0 text-xs">
-          <p>LIDAM IP LAW FIRM</p>
+        <div
+          id="pdf-area"
+          className="pointer-events-none absolute top-0 left-0 z-[-9999] min-h-[297mm] w-[210mm] bg-white p-10 font-serif text-sm text-black"
+        >
+          <div className="flex flex-col gap-0 text-xs">
+            <p>LIDAM IP LAW FIRM</p>
+            <p>
+              2F, 9-15, Seocho-daero 32-gil, Seocho-gu, Seoul, 06661, Rep. of
+              KOREA
+            </p>
+            <p>Phone: +82 2 6949 6993</p>
+            <p>Fax: +82 70 8673 6993</p>
+            <p>Email: lidamip@lidamip.com</p>
+          </div>
+
+          <h1 className="my-6 text-center text-xl font-bold underline">
+            POWER OF ATTORNEY
+          </h1>
+
           <p>
-            2F, 9-15, Seocho-daero 32-gil, Seocho-gu, Seoul, 06661, Rep. of
-            KOREA
+            I/We, the undersigned, <strong>{nameEn}</strong> of{" "}
+            <strong>{addressEn}</strong>
           </p>
-          <p>Phone: +82 2 6949 6993</p>
-          <p>Fax: +82 70 8673 6993</p>
-          <p>Email: lidamip@lidamip.com</p>
-        </div>
 
-        <h1 className="my-6 text-center text-xl font-bold underline">
-          POWER OF ATTORNEY
-        </h1>
+          <p className="mt-4">
+            do hereby appoint LIDAM IP LAW FIRM (attorney code:
+            9-2020-100128-7), registered patent attorney of Seoul, Republic of
+            Korea, as my/our lawful attorney to take on my/our behalf
+            proceedings for:
+          </p>
 
-        <p>
-          I/We, the undersigned, <strong>{nameEn}</strong> of{" "}
-          <strong>{addressEn}</strong>
-        </p>
+          <p className="mt-4">
+            Title of Invention: <strong>{title}</strong>
+          </p>
 
-        <p className="mt-4">
-          do hereby appoint LIDAM IP LAW FIRM (attorney code: 9-2020-100128-7),
-          registered patent attorney of Seoul, Republic of Korea, as my/our
-          lawful attorney to take on my/our behalf proceedings for:
-        </p>
+          <p className="mt-4">
+            before the Korean Intellectual Property Office, and further empower
+            said attorney, if necessary, to do any or all of the following:
+          </p>
 
-        <p className="mt-4">
-          Title of Invention: <strong>{title}</strong>
-        </p>
+          <div className="mt-4 flex flex-col gap-2">
+            {[...Array(14)].map((_, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="min-w-[1.5rem] text-right">{i + 1}.</span>
+                <p className="flex-1">
+                  {
+                    [
+                      "To take all necessary proceedings for the filing, prosecution and registration of said application.",
+                      "To divide, convert, abandon or withdraw said application.",
+                      "To withdraw or abandon a petition, an opposition, a request, a demand, an administrative petition or a suit made in relation to said application.",
+                      "To claim priority under Article 55(1) of the Patent Law or Article 11 of Utility Model Law, or withdraw it.",
+                      "To make a request for technical evaluation.",
+                      "To withdraw an application for registration of an extension of the term of a patent right.",
+                      "To appoint and to revoke sub-agents.",
+                      "To counteract against an opposition in relation to said application.",
+                      "To make an appeal against a decision of rejection of said application or of an amendment, or against a ruling for revocation to the Industrial Property Tribunal, the Patent Court or the Supreme Court.",
+                      "To make an administrative petition or suit from dissatisfaction with an administrative action.",
+                      "To act as the patent administrator under Article 5 of the Patent Law.",
+                      "To perform all other formalities and acts under the provisions concerned with the Patent, Utility Model, Design and Trademark Laws of Korea or any Order issued therefrom before and after the completion of such registration.",
+                      "To file application to renew the term of the said registration and to file application to register the reclassification goods of the said registration.",
+                      "To file address and name change for the said applicant.",
+                    ][i]
+                  }
+                </p>
+              </div>
+            ))}
+          </div>
 
-        <p className="mt-4">
-          before the Korean Intellectual Property Office, and further empower
-          said attorney, if necessary, to do any or all of the following:
-        </p>
+          <div className="mt-8 text-right">
+            <p>
+              {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
 
-        <div className="mt-4 flex flex-col gap-2">
-          {[...Array(14)].map((_, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <span className="min-w-[1.5rem] text-right">{i + 1}.</span>
-              <p className="flex-1">
-                {
-                  [
-                    "To take all necessary proceedings for the filing, prosecution and registration of said application.",
-                    "To divide, convert, abandon or withdraw said application.",
-                    "To withdraw or abandon a petition, an opposition, a request, a demand, an administrative petition or a suit made in relation to said application.",
-                    "To claim priority under Article 55(1) of the Patent Law or Article 11 of Utility Model Law, or withdraw it.",
-                    "To make a request for technical evaluation.",
-                    "To withdraw an application for registration of an extension of the term of a patent right.",
-                    "To appoint and to revoke sub-agents.",
-                    "To counteract against an opposition in relation to said application.",
-                    "To make an appeal against a decision of rejection of said application or of an amendment, or against a ruling for revocation to the Industrial Property Tribunal, the Patent Court or the Supreme Court.",
-                    "To make an administrative petition or suit from dissatisfaction with an administrative action.",
-                    "To act as the patent administrator under Article 5 of the Patent Law.",
-                    "To perform all other formalities and acts under the provisions concerned with the Patent, Utility Model, Design and Trademark Laws of Korea or any Order issued therefrom before and after the completion of such registration.",
-                    "To file application to renew the term of the said registration and to file application to register the reclassification goods of the said registration.",
-                    "To file address and name change for the said applicant.",
-                  ][i]
-                }
-              </p>
+            <p className="mt-1">
+              <strong>{nameEn}</strong>
+            </p>
+
+            <div className="mt-6 inline-flex items-center gap-2">
+              By:
+              {signatureUrl ? (
+                <img src={signatureUrl} alt="signature" className="w-[200px]" />
+              ) : null}
             </div>
-          ))}
-        </div>
-
-        <div className="mt-8 text-right">
-          <p>
-            {new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-
-          <p className="mt-1">
-            <strong>{nameEn}</strong>
-          </p>
-
-          <div className="mt-6 inline-flex items-center gap-2">
-            By:
-            {signatureUrl ? (
-              <img src={signatureUrl} alt="signature" className="w-[200px]" />
-            ) : null}
           </div>
         </div>
-      </div>
+      </Sheet>
     </div>
   );
 }

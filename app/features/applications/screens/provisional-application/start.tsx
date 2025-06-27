@@ -878,8 +878,15 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               isApplicantMissing={isApplicantMissing}
               isInventorMissing={isInventorMissing}
               onAddNew={() => {
+                // ✅ title이 없거나 빈 문자열인 경우 처리
+                if (!title || title.trim() === "") {
+                  // shadcn toast 또는 기본 alert 사용
+                  toast.error("Please enter the title of the invention first.");
+                  return; // 시트 열지 않음
+                }
+
+                // ✅ title이 정상적으로 존재하면 시트 열기
                 setIsApplicantSheetOpen(true);
-                console.log("ApplicantSheet opened");
               }}
             />
             <div>

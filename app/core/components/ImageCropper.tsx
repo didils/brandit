@@ -58,6 +58,8 @@ type ImageCropperProps = {
   setShowCropper: (show: boolean) => void;
 };
 
+// 생략된 import 및 cropImageToBlob 함수는 기존 그대로 유지
+
 export default function ImageCropper({
   imageFile,
   onCancel,
@@ -72,61 +74,36 @@ export default function ImageCropper({
     x: 10,
     y: 10,
     width: 60,
-    height: 45, // aspect에 맞춰서, 너무 큰 값을 주면 안됨
+    height: 45,
   });
-
   const didSetInitialCrop = useRef(false);
 
-  // 이미지 URL을 생성하여 미리보기로 사용
   const imageUrl = URL.createObjectURL(imageFile);
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (didSetInitialCrop.current) return; // ✅ 이미 설정했으면 다시 실행 안함
+    if (didSetInitialCrop.current) return;
     didSetInitialCrop.current = true;
 
     const { width, height } = e.currentTarget;
     const aspect = 4 / 3;
     const initialCrop = centerCrop(
-      makeAspectCrop(
-        {
-          unit: "%",
-          width: 50,
-        },
-        aspect,
-        width,
-        height,
-      ),
+      makeAspectCrop({ unit: "%", width: 50 }, aspect, width, height),
       width,
       height,
     );
     setCrop(initialCrop);
-    setCompletedCrop(initialCrop); // ✅ 바로 completedCrop도 설정
+    setCompletedCrop(initialCrop);
   };
 
   const handleSave = async () => {
-    console.log("💾 handleSave 실행");
-
-    if (!imgRef.current) {
-      console.warn("imgRef가 null입니다.");
-      return;
-    }
-
-    if (
-      !completedCrop ||
-      completedCrop.width === 0 ||
-      completedCrop.height === 0
-    ) {
-      console.warn("completedCrop 정보가 부족하거나 0입니다:", completedCrop);
+    if (!imgRef.current || !completedCrop?.width || !completedCrop?.height) {
+      console.warn("imgRef 또는 crop 정보가 부족합니다.");
       return;
     }
 
     try {
       const blob = await cropImageToBlob(imgRef.current, completedCrop);
-      if (!blob) {
-        console.error("cropImageToBlob 실패: Blob이 null입니다.");
-        return;
-      }
-
+      if (!blob) return;
       const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
       setCroppedImage(file);
       onCancel(); // 또는 setShowCropper(false);
@@ -135,30 +112,42 @@ export default function ImageCropper({
     }
   };
 
+  // ✅ ESC 키 누르면 닫히도록
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
   return (
     <div className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-white p-4 shadow-xl">
-        <ReactCrop
-          crop={crop}
-          onChange={(c) => setCrop(c)}
-          onComplete={(c) => setCompletedCrop(c)}
-          //   aspect={4 / 3}
-          minWidth={20} // 최소 크기 설정
-          minHeight={15}
-          keepSelection={false} // 사용자가 크롭 제거 가능하게
-          circularCrop={false}
-          className="pointer-events-auto"
-        >
-          <img
-            ref={imgRef}
-            src={imageUrl}
-            onLoad={onImageLoad}
-            alt="Crop me"
-            className="pointer-events-auto max-h-[70vh] max-w-full object-contain"
-          />
-        </ReactCrop>
+      <div className="flex max-h-[90vh] max-w-[90vw] flex-col gap-4 overflow-auto rounded-lg bg-white p-4 shadow-xl">
+        <div className="overflow-auto">
+          <ReactCrop
+            crop={crop}
+            onChange={(c) => setCrop(c)}
+            onComplete={(c) => setCompletedCrop(c)}
+            minWidth={20}
+            minHeight={15}
+            keepSelection={false}
+            circularCrop={false}
+            className="pointer-events-auto"
+          >
+            <img
+              ref={imgRef}
+              src={imageUrl}
+              onLoad={onImageLoad}
+              alt="Crop me"
+              className="pointer-events-auto max-h-[70vh] max-w-full object-contain"
+            />
+          </ReactCrop>
+        </div>
 
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>

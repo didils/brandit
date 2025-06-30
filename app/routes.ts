@@ -48,6 +48,7 @@ export default [
     ]),
     ...prefix("/cron", [route("/mailer", "features/cron/api/mailer.tsx")]),
     ...prefix("/blog", [route("/og", "features/blog/api/og.tsx")]),
+    route("/send-poa-email", "features/applications/api/send-poa-email.tsx"),
   ]),
 
   layout("core/layouts/navigation.layout.tsx", [

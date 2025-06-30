@@ -85,7 +85,6 @@ import { browserClient } from "~/core/lib/browser-client";
 import { cn } from "~/core/lib/utils";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  //   console.log("🚀 [loader] 실행됨");
   const { default: makeServerClient } = await import(
     "~/core/lib/supa-client.server"
   );
@@ -94,7 +93,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   const {
     data: { user },
   } = await client.auth.getUser();
-  //   console.log("🚀 [loader] 실행됨 2");
   if (!user) {
     //   console.log("🚫 사용자 없음 - 비로그인 상태");
     return {
@@ -114,37 +112,19 @@ export async function loader({ request }: Route.LoaderArgs) {
     .select("*")
     .eq("user_id", user.id);
 
-  console.log("🚀 [loader] 실행됨 3", {
-    applicants,
-    inventors,
-  });
-
   // ✅ 에러 발생 시 반환
   if (applicantsError || inventorsError) {
-    // console.error("❗ 데이터 로딩 에러", {
-    //   applicantsError,
-    //   inventorsError,
-    // });
-
     throw new Response("Failed to fetch applicants or inventors", {
       status: 500,
     });
   }
-  //   console.log("🚀 [loader] 실행됨 3", {
-  //     applicants,
-  //     inventors,
-  //   });
+
   return {
     user,
     applicants,
     inventors,
   };
 }
-type ProvisionalAppResult = {
-  patent_id: string;
-  process_id: string;
-  our_ref: string;
-};
 
 type Applicant = {
   id: string;
@@ -327,12 +307,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
     setSupabase(browserClient);
   }, []);
 
-  useEffect(() => {
-    if (filePath) {
-      console.log("✅ [useEffect] filePath가 변경됨:", filePath);
-    }
-  }, [filePath]);
-
   async function savePatentDraft(finalFilePath: string | null) {
     let uploadedFileInfo: { name: string; url: string; type: string }[] = [];
 
@@ -365,9 +339,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
       toast.error("draft save failed");
     } else {
       toast.success("draft saved");
-      console.log("✅ patent ID:", data?.[0]?.id);
       setExistingDraftId(data?.[0]?.id!);
-      console.log("✅ existingDraftId:", existingDraftId);
       setIsSubmittingDraft(false);
     }
   }
@@ -536,9 +508,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           contentType: selectedFile.type,
           upsert: true,
         });
-      console.log("🛠️ [handleUpload] 파일 업로드 실패", {
-        uploadError,
-      });
 
       if (uploadError) {
         toast.error("파일 업로드 실패");
@@ -812,10 +781,10 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       </div>
-      <div className="flex min-h-screen w-full flex-row items-stretch justify-center gap-20">
+      <div className="flex min-h-screen w-full flex-col items-stretch justify-center gap-20 lg:flex-row">
         <div
           ref={leftRef}
-          className="flex w-[65%] flex-col items-start gap-10 space-y-5 pt-10 pb-20"
+          className="flex w-full flex-col items-start gap-10 space-y-5 pt-10 pb-20 lg:w-[65%]"
         >
           <div className="mx-auto flex flex-col items-start gap-10 space-y-2">
             <SaveDraftAlert
@@ -889,6 +858,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 setIsApplicantSheetOpen(true);
               }}
             />
+
             <div>
               <Combobox
                 comboName="inventor"
@@ -1051,7 +1021,10 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
         {!isHidden && (
-          <div ref={rightRef} className="w-[35%] bg-[#f5f6f8] px-10 pt-5 pb-7">
+          <div
+            ref={rightRef}
+            className="w-full bg-[#f5f6f8] px-10 pt-5 pb-7 lg:w-[35%]"
+          >
             <div className="sticky top-9">
               <Card className="w-full">
                 <CardHeader>
@@ -1183,6 +1156,9 @@ export default function Start({ loaderData }: Route.ComponentProps) {
         addressEn={addressEn}
         setNameEn={setNameEn}
         setAddressEn={setAddressEn}
+        user={loaderData.user}
+        selectedApplicants={selectedApplicants}
+        setSelectedApplicants={setSelectedApplicants}
       />
     </div>
   );

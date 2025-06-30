@@ -112,7 +112,10 @@ export const entities = pgTable("entities", {
     .notNull()
     .references(() => authUsers.id, { onDelete: "cascade" }),
 
-  name_kr: text().notNull(),
+  // ✨ 개인 or 법인 구분
+  entity_type: text().$type<"individual" | "company">(),
+
+  name_kr: text(),
   name_en: text(),
   client_code: text(),
   address_kr: text(),
@@ -124,7 +127,7 @@ export const entities = pgTable("entities", {
   // 🔹 변리사 위임 정보
   has_poa: boolean().default(false), // 위임 여부
   signature_image_url: text(), // 서명 이미지 URL
-  signer_position: text().notNull(), // 직책 (자유 입력 가능)
+  signer_position: text(), // 직책 (자유 입력 가능)
   signer_name: text(), // 서명자 성함
   representative_name: text(), // 법인 대표자 이름
 
@@ -138,7 +141,7 @@ export const inventors = pgTable("inventors", {
     .notNull()
     .references(() => authUsers.id, { onDelete: "cascade" }),
 
-  name_kr: text().notNull(),
+  name_kr: text(),
   name_en: text(),
   nationality: text(),
   id_number: text(),

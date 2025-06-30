@@ -19,11 +19,11 @@ export type Database = {
           has_poa: boolean | null
           id: string
           name_en: string | null
-          name_kr: string
+          name_kr: string | null
           representative_name: string | null
           signature_image_url: string | null
           signer_name: string | null
-          signer_position: string
+          signer_position: string | null
           updated_at: string
           user_id: string
         }
@@ -36,11 +36,11 @@ export type Database = {
           has_poa?: boolean | null
           id?: string
           name_en?: string | null
-          name_kr: string
+          name_kr?: string | null
           representative_name?: string | null
           signature_image_url?: string | null
           signer_name?: string | null
-          signer_position: string
+          signer_position?: string | null
           updated_at?: string
           user_id: string
         }
@@ -53,11 +53,11 @@ export type Database = {
           has_poa?: boolean | null
           id?: string
           name_en?: string | null
-          name_kr?: string
+          name_kr?: string | null
           representative_name?: string | null
           signature_image_url?: string | null
           signer_name?: string | null
-          signer_position?: string
+          signer_position?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -71,7 +71,7 @@ export type Database = {
           id: string
           id_number: string | null
           name_en: string | null
-          name_kr: string
+          name_kr: string | null
           nationality: string | null
           residence_country: string | null
           updated_at: string
@@ -85,7 +85,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           name_en?: string | null
-          name_kr: string
+          name_kr?: string | null
           nationality?: string | null
           residence_country?: string | null
           updated_at?: string
@@ -99,7 +99,7 @@ export type Database = {
           id?: string
           id_number?: string | null
           name_en?: string | null
-          name_kr?: string
+          name_kr?: string | null
           nationality?: string | null
           residence_country?: string | null
           updated_at?: string

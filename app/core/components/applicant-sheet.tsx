@@ -1,4 +1,4 @@
-import { AlertCircleIcon, FileCheck2Icon, XIcon } from "lucide-react";
+import { AlertCircleIcon, FileCheck2Icon, MailIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
 import { FileDropzone } from "./ui/filedropzone";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import {
@@ -44,14 +45,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
+
+const signerPositions = [
+  { label: "CEO", value: "CEO" },
+  { label: "Representative", value: "Representative" },
+  { label: "President", value: "President" },
+  { label: "Owner", value: "Owner" },
+  { label: "Chairman", value: "Chairman" },
+  { label: "Managing Director", value: "Managing Director" },
+  { label: "Other", value: "etc" }, // 기타 직책
+];
 
 const countries = [
   { name: "United States", code: "US" },
   { name: "South Korea", code: "KR" },
-  { name: "European Union", code: "EU" },
   { name: "China", code: "CN" },
   { name: "Japan", code: "JP" },
 ];
+
+const companyTypes = [
+  { label: "Inc.", value: "Inc." },
+  { label: "Corp.", value: "Corp." },
+  { label: "LLC", value: "LLC" },
+  { label: "Ltd.", value: "Ltd." },
+  { label: "GmbH", value: "GmbH" },
+  { label: "S.A.", value: "S.A." },
+  { label: "Other", value: "etc" },
+];
+
+type Applicant = {
+  id: string;
+  name_kr: string;
+  name_en: string;
+  nationality: string;
+  id_number: string;
+  zipcode: string;
+  address_kr: string;
+  address_en: string;
+  residence_country: string;
+  client_code: string;
+};
 
 export function ApplicantSheet({
   isOpen,
@@ -73,6 +112,9 @@ export function ApplicantSheet({
   addressEn,
   setNameEn,
   setAddressEn,
+  user,
+  selectedApplicants,
+  setSelectedApplicants,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -93,22 +135,29 @@ export function ApplicantSheet({
   addressEn: string;
   setNameEn: (name: string) => void;
   setAddressEn: (address: string) => void;
+  user: any;
+  selectedApplicants: Applicant[];
+  setSelectedApplicants: (applicants: Applicant[]) => void;
 }) {
   // ✅ 공통 입력값
-  const [entityType, setEntityType] = useState<"person" | "company">("person");
+  const [entityType, setEntityType] = useState<"individual" | "company">(
+    "company",
+  );
   const [signatureUrl, setSignatureUrl] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [delegationType, setDelegationType] = useState<"simple" | "standard">(
-    "simple",
-  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [companyPrefix, setCompanyPrefix] = useState<string>("");
+  const [agreed, setAgreed] = useState(false);
+  const [agreed2, setAgreed2] = useState(false);
+  const [customPrefix, setCustomPrefix] = useState<string>("");
+  const [companyName, setCompanyName] = useState("");
 
   // ✅ 법인 전용
   const [signerPosition, setSignerPosition] = useState("");
   const [signerName, setSignerName] = useState("");
   const [representativeName, setRepresentativeName] = useState("");
-
+  const [customPosition, setCustomPosition] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [customCountry, setCustomCountry] = useState("");
 
@@ -123,6 +172,36 @@ export function ApplicantSheet({
     }
   };
 
+  const handleDownloadPOAForm = async () => {
+    // ✅ 필수 입력 확인
+    if (entityType === "individual") {
+      if (!firstName.trim() || !lastName.trim() || !addressEn.trim()) {
+        toast.error("Please fill in your first name, last name, and address.");
+        return;
+      }
+    } else if (entityType === "company") {
+      if (!companyName.trim() || !companyPrefix.trim() || !addressEn.trim()) {
+        toast.error(
+          "Please fill in the company name, entity type, and address.",
+        );
+        return;
+      }
+    }
+
+    // ✅ 입력이 다 된 경우 → PDF 생성
+    const file = await generatePOAClient({
+      elementId: "pdf-area",
+      filename: "POA.pdf",
+    });
+
+    const url = URL.createObjectURL(file as unknown as Blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "POA.pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
     setNameEn(fullName);
@@ -133,7 +212,6 @@ export function ApplicantSheet({
       setSignatureUrl("");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
@@ -143,55 +221,138 @@ export function ApplicantSheet({
     reader.readAsDataURL(croppedImage);
   }, [croppedImage]);
 
+  useEffect(() => {
+    if (companyPrefix === "etc") {
+      setNameEn(companyName + " " + customPrefix);
+    } else {
+      setNameEn(companyName + " " + companyPrefix);
+    }
+  }, [companyPrefix, companyName]);
+
   const handleSave = async () => {
+    // ✅ 국가 입력 검사
+    if (!selectedCountry || selectedCountry.trim() === "") {
+      toast.error("Please select a nationality.");
+      // alert("Please select a country.");
+      return;
+    }
+
+    if (
+      selectedCountry === "etc" &&
+      (!customCountry || customCountry.trim() === "")
+    ) {
+      toast.error("Please select a nationality.");
+      return;
+    }
     setIsLoading(true);
 
     try {
+      // ✅ 사용자 확인
       const {
         data: { user },
       } = await browserClient.auth.getUser();
 
       if (!user) {
-        alert("로그인이 필요합니다.");
+        toast.error("login is required.");
         return;
       }
 
-      const insertData: any = {
+      // ✅ 사인 이미지 유효성 검사
+      if (!croppedImage) {
+        toast.error("please upload a signature image.");
+        return;
+      }
+
+      // ✅ Supabase Storage에 서명 이미지 업로드
+      const filePath = `signatures/${user.id}/${Date.now()}_signature.png`;
+
+      const { error: uploadError } = await browserClient.storage
+        .from("signatures")
+        .upload(filePath, croppedImage, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: croppedImage.type || "image/png",
+        });
+
+      if (uploadError) {
+        console.error("failed to upload signature image:", uploadError.message);
+        toast.error("failed to upload signature image.");
+        return;
+      }
+
+      // ✅ public URL 생성
+      const {
+        data: { publicUrl },
+      } = browserClient.storage.from("signatures").getPublicUrl(filePath);
+
+      // ✅ Supabase에 저장할 데이터 구성
+      const insertData = {
         user_id: user.id,
+        entity_type: entityType, // ✅ 추가된 필드
         name_en: nameEn,
         address_en: addressEn,
-        signature_image_url: signatureUrl,
+        signature_image_url: publicUrl,
+        country: selectedCountry === "etc" ? customCountry : selectedCountry, // ✅ 조건 분기
+        has_poa: true,
+        signer_position:
+          entityType === "company" ? signerPosition : signerPosition,
+        signer_name: entityType === "company" ? signerName : signerName,
+        representative_name:
+          entityType === "company" ? representativeName : representativeName,
       };
 
-      if (entityType === "company") {
-        insertData.signer_position = signerPosition;
-        insertData.signer_name = signerName;
-        insertData.representative_name = representativeName;
-      } else {
-        insertData.signer_position = "본인";
-        insertData.signer_name = nameEn;
-        insertData.representative_name = null;
+      // ✅ Supabase에 삽입 및 삽입된 데이터 반환
+      const { data, error } = await browserClient
+        .from("entities")
+        .insert(insertData)
+        .select()
+        .single();
+
+      console.log("data from insert at applicant sheet", data);
+
+      if (error || !data) {
+        console.error("failed to save:", error?.message);
+        toast.error("failed to save.");
+        return;
       }
 
-      const { error } = await browserClient.from("entities").insert(insertData);
+      // ✅ selectedApplicants에 새 항목 추가
+      const applicantData: Applicant = {
+        id: data.id,
+        name_kr: data.name_kr || "",
+        name_en: data.name_en || "",
+        nationality: data.country || "",
+        id_number: "", // 필드가 없으므로 빈 문자열로 설정
+        zipcode: "", // 필드가 없으므로 빈 문자열로 설정
+        address_kr: data.address_kr || "",
+        address_en: data.address_en || "",
+        residence_country: data.country || "",
+        client_code: data.client_code || "",
+      };
+      setSelectedApplicants([...selectedApplicants, applicantData]);
 
-      if (error) {
-        console.error("저장 실패:", error.message);
-        alert("저장 중 오류가 발생했습니다.");
-      } else {
-        alert("저장 완료!");
-        // 값 초기화
-        setNameEn("");
-        setAddressEn("");
-        setSignatureUrl("");
-        setSignerPosition("");
-        setSignerName("");
-        setRepresentativeName("");
-        onOpenChange(false); // 시트 닫기
-      }
+      toast.success("Applicant saved successfully!");
+
+      // ✅ 입력값 초기화
+      setNameEn("");
+      setAddressEn("");
+      setSignatureUrl("");
+      setSignerPosition("");
+      setSignerName("");
+      setRepresentativeName("");
+      setEntityType("company");
+      setCroppedImage(null);
+      setCompanyName("");
+      setCompanyPrefix("");
+      setCustomPrefix("");
+      setSelectedCountry("");
+      setCustomCountry("");
+      setAgreed(false);
+      setAgreed2(false);
+      onOpenChange(false); // 시트 닫기
     } catch (e) {
-      console.error(e);
-      alert("예외가 발생했습니다.");
+      console.error("exception occurred:", e);
+      toast.error("exception occurred.");
     } finally {
       setIsLoading(false);
     }
@@ -214,131 +375,62 @@ export function ApplicantSheet({
           {/* ✅ Tabs로 구분 */}
           <div className="mx-14 flex flex-col gap-4">
             <Tabs
-              defaultValue="person"
-              onValueChange={(v) => setEntityType(v as "person" | "company")}
+              defaultValue="company"
+              onValueChange={(v) =>
+                setEntityType(v as "individual" | "company")
+              }
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="company">Corporation</TabsTrigger>
-                <TabsTrigger value="person">Individual</TabsTrigger>
+                <TabsTrigger value="company">Company</TabsTrigger>
+                <TabsTrigger value="individual">Individual</TabsTrigger>
               </TabsList>
               {/* ✅ Corporation input form */}
-              <TabsContent value="company" className="mt-4 space-y-4">
-                <div className="flex flex-col gap-1">
-                  <Label>Company Name (English)</Label>
-                  <Input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                  />
-                  <small className="text-muted-foreground">
-                    Must match the name on your business registration
-                  </small>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label>Company Name (English)</Label>
-                  <Input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                  />
-                  <small className="text-muted-foreground">
-                    Must match the name on your business registration
-                  </small>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label>Address (English)</Label>
-                  <Input
-                    value={addressEn}
-                    onChange={(e) => setAddressEn(e.target.value)}
-                  />
-                  <small className="text-muted-foreground">
-                    Full address of the company headquarters
-                  </small>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label>Signer's Position</Label>
-                  <Input
-                    value={signerPosition}
-                    onChange={(e) => setSignerPosition(e.target.value)}
-                  />
-                  <small className="text-muted-foreground">
-                    e.g., CEO, Director, or authorized officer
-                  </small>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label>Signer's Name</Label>
-                  <small className="text-muted-foreground">
-                    Full name of the person signing the documents
-                  </small>
-                  <Input
-                    value={signerName}
-                    onChange={(e) => setSignerName(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label>Representative's Name</Label>
-                  <small className="text-muted-foreground">
-                    Name of the registered representative of the company
-                  </small>
-                  <Input
-                    value={representativeName}
-                    onChange={(e) => setRepresentativeName(e.target.value)}
-                  />
-                </div>
-              </TabsContent>
-
-              {/* ✅ Individual input form */}
-
-              <TabsContent value="person" className="mt-8 space-y-4">
-                {/* ✅ 국가 선택 */}
-                <div className="flex flex-col gap-1">
-                  <Label>Nationality of the applicant</Label>
-                  <div className="flex w-full flex-row justify-between gap-1">
-                    <Select
-                      onValueChange={(value) => {
-                        if (value === "etc") {
-                          setSelectedCountry("etc"); // 초기화 (선택된 국가 없음)
-                        } else {
-                          setSelectedCountry(value); // 일반 국가 선택 시 설정
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder="Select a country"
-                          // value는 외부에서 관리하므로 selectedCountry 사용
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>
-                            Nationality of the applicant
-                          </SelectLabel>
-                          {countries.map((country) => (
-                            <SelectItem key={country.code} value={country.code}>
-                              {country.name}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="etc">Other nationality</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-
-                    {/* ❗ "기타 국가"를 선택했을 때만 input 표시 */}
-                    {selectedCountry === "etc" && (
-                      <Input
-                        placeholder="Enter nationality"
-                        value={customCountry}
-                        onChange={(e) => {
-                          const inputValue = e.target.value;
-                          setCustomCountry(inputValue);
-                          //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
-                        }}
+              {/* ✅ 국가 선택 */}
+              <div className="mt-4 flex flex-col gap-1">
+                <Label>Nationality of the applicant</Label>
+                <div className="flex w-full flex-row justify-between gap-1">
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === "etc") {
+                        setSelectedCountry("etc"); // 초기화 (선택된 국가 없음)
+                      } else {
+                        setSelectedCountry(value); // 일반 국가 선택 시 설정
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder="Select a nationality"
+                        // value는 외부에서 관리하므로 selectedCountry 사용
                       />
-                    )}
-                  </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {/* <SelectLabel>Nationality of the applicant</SelectLabel> */}
+                        {countries.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="etc">Other nationality</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+
+                  {/* ❗ "기타 국가"를 선택했을 때만 input 표시 */}
+                  {selectedCountry === "etc" && (
+                    <Input
+                      placeholder="Enter nationality"
+                      value={customCountry}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setCustomCountry(inputValue);
+                        //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
+                      }}
+                    />
+                  )}
                 </div>
+
                 <Alert variant="destructive">
                   <AlertCircleIcon />
                   <AlertTitle>
@@ -349,7 +441,7 @@ export function ApplicantSheet({
                       Please ensure that the applicant's nationality corresponds
                       to the country of their address.
                     </p>
-                    <ul className="list-inside list-disc text-sm">
+                    {/* <ul className="list-inside list-disc text-sm">
                       <li>
                         For example, if the address is in the United States, the
                         nationality should also be set to the U.S.
@@ -359,9 +451,441 @@ export function ApplicantSheet({
                         please review the information carefully before
                         proceeding.
                       </li>
-                    </ul>
+                    </ul> */}
                   </AlertDescription>
                 </Alert>
+              </div>
+              <TabsContent value="company" className="space-y-4">
+                <div className="mt-4 flex flex-col gap-1">
+                  <Label>Company Name</Label>
+
+                  <small className="text-muted-foreground">
+                    Must match the name on your business registration
+                  </small>
+                  <div className="flex w-full flex-row justify-between gap-1">
+                    <Input
+                      value={companyName}
+                      placeholder="Company Name"
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
+                    {/* ❗ "기타"를 선택했을 때만 input 표시 */}
+                    {companyPrefix === "etc" && (
+                      <Input
+                        placeholder="Entity type"
+                        className="w-[160px]"
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          setCustomPrefix(inputValue);
+                          //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
+                        }}
+                      />
+                    )}
+                    <Select
+                      onValueChange={(value) => {
+                        setCompanyPrefix(value);
+                      }}
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Entity type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {companyTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label>Address</Label>
+                  <small className="text-muted-foreground">
+                    Business address of the company
+                  </small>
+                  <Input
+                    value={addressEn}
+                    onChange={(e) => setAddressEn(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <Label>Delegation Method</Label>
+                  <small className="text-muted-foreground">
+                    Select the appropriate method to grant Power of Attorney
+                  </small>
+
+                  <Tabs defaultValue="digital" className="flex flex-col gap-4">
+                    {/* ✅ 위임 유형 선택 Tabs */}
+                    <TabsList className="w-full justify-around">
+                      <TabsTrigger value="digital">
+                        <div className="flex flex-col items-center">
+                          <Label>Digital Authorization</Label>
+                          {/* <p className="text-muted-foreground text-center text-sm">
+                      Use an uploaded signature image to authorize
+                      electronically.
+                    </p> */}
+                        </div>
+                      </TabsTrigger>
+                      <TabsTrigger value="paper">
+                        <div className="flex flex-col items-center">
+                          <Label>Paper-Based Authorization</Label>
+                          {/* <p className="text-muted-foreground text-center text-sm">
+                      Submit a scanned PDF after printing and signing the POA
+                      form.
+                    </p> */}
+                        </div>
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* ✅ 디지털 위임 탭: 이미지 업로드 */}
+                    <TabsContent value="digital">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Digital Authorization</CardTitle>
+                          <CardDescription>
+                            Upload a signature image to instantly authorize via
+                            electronic Power of Attorney.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                          <div className="flex flex-col gap-4">
+                            <div className="mt-4 flex flex-col gap-1">
+                              <Label>Signer's Position</Label>
+                              <small className="text-muted-foreground">
+                                Position of the person authorized to sign the
+                                document
+                              </small>
+                              <div className="flex flex-row gap-1">
+                                <Select
+                                  onValueChange={(value) => {
+                                    setSignerPosition(value);
+                                    if (value !== "etc") setCustomPosition(""); // 기타 아님 → 입력 초기화
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select position" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectGroup>
+                                      {signerPositions.map((pos) => (
+                                        <SelectItem
+                                          key={pos.value}
+                                          value={pos.value}
+                                        >
+                                          {pos.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  </SelectContent>
+                                </Select>
+                                {/* 기타 선택 시 수동 입력 */}
+                                {signerPosition === "etc" && (
+                                  <Input
+                                    value={customPosition}
+                                    onChange={(e) =>
+                                      setCustomPosition(e.target.value)
+                                    }
+                                    placeholder="Enter position (e.g. Vice President)"
+                                  />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <Label>Signer's Name</Label>
+                              <small className="text-muted-foreground">
+                                Full name of the person signing the documents
+                              </small>
+                              <Input
+                                value={signerName}
+                                onChange={(e) => setSignerName(e.target.value)}
+                              />
+                            </div>
+                            {signerPosition === "etc" && (
+                              <div className="flex flex-col gap-1">
+                                <Label>Authorized Signatory's Name</Label>
+                                <small className="text-muted-foreground">
+                                  Person legally authorized to sign on behalf of
+                                  the company
+                                </small>
+                                <Input
+                                  value={representativeName}
+                                  onChange={(e) =>
+                                    setRepresentativeName(e.target.value)
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid gap-3">
+                            <Label htmlFor="tabs-demo-name">
+                              Signature Image
+                            </Label>
+                            {croppedImage ? (
+                              <div className="relative w-full max-w-xs">
+                                <img
+                                  src={URL.createObjectURL(croppedImage)}
+                                  alt="signature"
+                                  className="w-full rounded border object-contain shadow"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => setCroppedImage(null)} // ❌ 이미지 초기화
+                                  className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
+                                >
+                                  Re-select
+                                </Button>
+                              </div>
+                            ) : (
+                              <ImageDropzone
+                                rawImage={rawImage}
+                                setRawImage={setRawImage}
+                                finalImage={finalImage}
+                                setFinalImage={setFinalImage}
+                                showEditor={showEditor}
+                                setShowEditor={setShowEditor}
+                              />
+                            )}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex flex-col items-end gap-4">
+                          <div className="flex flex-col items-end gap-1">
+                            {/* ✅ span은 커서 적용을 위해 꼭 필요 */}
+                            <span
+                              className={
+                                !croppedImage ? "cursor-not-allowed" : ""
+                              }
+                            >
+                              <Button
+                                variant="outline"
+                                disabled={!croppedImage}
+                                onClick={async () => {
+                                  if (!croppedImage) {
+                                    toast.error("Signature image is required.");
+                                    return;
+                                  }
+                                  if (!companyName?.trim()) {
+                                    toast.error(
+                                      "Please enter the company name.",
+                                    );
+                                    return;
+                                  }
+                                  if (!signerName?.trim()) {
+                                    toast.error(
+                                      "Please enter the signer's name.",
+                                    );
+                                    return;
+                                  }
+                                  if (!signerPosition) {
+                                    toast.error(
+                                      "Please enter the signer's position.",
+                                    );
+                                    return;
+                                  }
+                                  if (!addressEn?.trim()) {
+                                    toast.error(
+                                      "Please enter the applicant's address.",
+                                    );
+                                    return;
+                                  }
+
+                                  handleGeneratePdf();
+                                }}
+                                className={
+                                  !croppedImage
+                                    ? "pointer-events-none cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400"
+                                    : ""
+                                }
+                              >
+                                <FileCheck2Icon className="mr-2" />
+                                Generate POA with uploaded signature
+                              </Button>
+                            </span>
+
+                            {selectedFile && (
+                              <div className="flex flex-row items-center gap-1 text-sm font-light text-green-600">
+                                {/* 클릭 시 새 탭으로 미리보기 */}
+                                <div
+                                  className="cursor-pointer hover:underline"
+                                  onClick={() => {
+                                    const url =
+                                      URL.createObjectURL(selectedFile);
+                                    window.open(url, "_blank");
+                                  }}
+                                >
+                                  <strong>{selectedFile.name}</strong> (
+                                  {(selectedFile.size / 1024).toFixed(1)} KB)
+                                </div>
+                                {/* X 아이콘 클릭 시 삭제 */}
+                                <button
+                                  onClick={() => setSelectedFile(null)}
+                                  className="text-green-600 hover:text-red-700"
+                                  aria-label="Remove file"
+                                >
+                                  <XIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex w-full flex-col items-center">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                id="toggle"
+                                disabled={!selectedFile}
+                                checked={agreed}
+                                onCheckedChange={(checked) =>
+                                  setAgreed(Boolean(checked))
+                                }
+                              />
+                              <Label
+                                htmlFor="toggle"
+                                className="font-bold text-black"
+                              >
+                                I have read and agree to the Power of Attorney
+                                Agreement.
+                              </Label>
+                            </div>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    </TabsContent>
+
+                    {/* ✅ 종이 기반 위임 탭: PDF 업로드 */}
+                    <TabsContent value="paper">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Paper-Based Authorization</CardTitle>
+                          <CardDescription>
+                            Please download the Power of Attorney (POA) form and
+                            sign it manually. Send it directly to{" "}
+                            <strong>brandit@brandit-ip.com</strong>
+                          </CardDescription>
+                          <CardDescription>
+                            The process usually takes{" "}
+                            <strong>2–3 business days</strong> to complete after
+                            we receive your signed document.
+                            <p className="text-muted-foreground mt-3 text-sm">
+                              You{" "}
+                              <strong>
+                                can complete and submit the application form to
+                                us
+                              </strong>{" "}
+                              before sending back the signed POA.
+                            </p>
+                            <p className="text-muted-foreground mt-3 text-sm">
+                              However, we will{" "}
+                              <strong>not be able to submit</strong> the
+                              application to the Patent Office until we receive
+                              the signed POA.
+                            </p>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-col gap-4">
+                            <div className="mt-4 flex flex-col gap-1">
+                              <Label>Signer's Position</Label>
+                              <small className="text-muted-foreground">
+                                Position of the person authorized to sign the
+                                document
+                              </small>
+                              <div className="flex flex-row gap-1">
+                                <Select
+                                  onValueChange={(value) => {
+                                    setSignerPosition(value);
+                                    if (value !== "etc") setCustomPosition(""); // 기타 아님 → 입력 초기화
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select position" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectGroup>
+                                      {signerPositions.map((pos) => (
+                                        <SelectItem
+                                          key={pos.value}
+                                          value={pos.value}
+                                        >
+                                          {pos.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  </SelectContent>
+                                </Select>
+                                {/* 기타 선택 시 수동 입력 */}
+                                {signerPosition === "etc" && (
+                                  <Input
+                                    value={customPosition}
+                                    onChange={(e) =>
+                                      setCustomPosition(e.target.value)
+                                    }
+                                    placeholder="Enter position (e.g. Vice President)"
+                                  />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <Label>Signer's Name</Label>
+                              <small className="text-muted-foreground">
+                                Full name of the person signing the documents
+                              </small>
+                              <Input
+                                value={signerName}
+                                onChange={(e) => setSignerName(e.target.value)}
+                              />
+                            </div>
+                            {signerPosition === "etc" && (
+                              <div className="flex flex-col gap-1">
+                                <Label>Authorized Signatory's Name</Label>
+                                <small className="text-muted-foreground">
+                                  Person legally authorized to sign on behalf of
+                                  the company
+                                </small>
+                                <Input
+                                  value={representativeName}
+                                  onChange={(e) =>
+                                    setRepresentativeName(e.target.value)
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex flex-col items-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={handleDownloadPOAForm}
+                          >
+                            <FileCheck2Icon />
+                            Download POA Form
+                          </Button>
+                          {/* <Button
+                            variant="outline"
+                            onClick={sendPOAFormToEmail}
+                          >
+                            <MailIcon />
+                            Receive POA Form to {user.email}
+                          </Button> */}
+                        </CardFooter>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+                <div className="mt-6">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isLoading || !agreed}
+                    className="w-full"
+                  >
+                    {isLoading ? "Saving..." : "Save Applicant"}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* ✅ Individual input form */}
+
+              <TabsContent value="individual" className="mt-4 space-y-4">
                 {/* ✅ 이름 입력 */}
                 <div className="flex flex-row justify-between gap-2">
                   <div className="flex w-1/2 flex-col gap-1">
@@ -385,7 +909,7 @@ export function ApplicantSheet({
 
                 {/* ✅ 주소 입력 */}
                 <div className="flex flex-col gap-1">
-                  <Label>Address (English)</Label>
+                  <Label>Address</Label>
                   <small className="text-muted-foreground">
                     Full mailing address in English
                   </small>
@@ -394,182 +918,237 @@ export function ApplicantSheet({
                     onChange={(e) => setAddressEn(e.target.value)}
                   />
                 </div>
-              </TabsContent>
-            </Tabs>
-            <div className="flex flex-col gap-1">
-              <Label>Delegation Method</Label>
-              <small className="text-muted-foreground">
-                Select the appropriate method to grant Power of Attorney
-              </small>
+                <div className="flex flex-col gap-1">
+                  <Label>Delegation Method</Label>
+                  <small className="text-muted-foreground">
+                    Select the appropriate method to grant Power of Attorney
+                  </small>
 
-              <Tabs defaultValue="digital" className="flex flex-col gap-4">
-                {/* ✅ 위임 유형 선택 Tabs */}
-                <TabsList className="w-full justify-around">
-                  <TabsTrigger value="digital">
-                    <div className="flex flex-col items-center">
-                      <Label>Digital Authorization</Label>
-                      {/* <p className="text-muted-foreground text-center text-sm">
+                  <Tabs defaultValue="digital" className="flex flex-col gap-4">
+                    {/* ✅ 위임 유형 선택 Tabs */}
+                    <TabsList className="w-full justify-around">
+                      <TabsTrigger value="digital">
+                        <div className="flex flex-col items-center">
+                          <Label>Digital Authorization</Label>
+                          {/* <p className="text-muted-foreground text-center text-sm">
                       Use an uploaded signature image to authorize
                       electronically.
                     </p> */}
-                    </div>
-                  </TabsTrigger>
-                  <TabsTrigger value="paper">
-                    <div className="flex flex-col items-center">
-                      <Label>Paper-Based Authorization</Label>
-                      {/* <p className="text-muted-foreground text-center text-sm">
+                        </div>
+                      </TabsTrigger>
+                      <TabsTrigger value="paper">
+                        <div className="flex flex-col items-center">
+                          <Label>Paper-Based Authorization</Label>
+                          {/* <p className="text-muted-foreground text-center text-sm">
                       Submit a scanned PDF after printing and signing the POA
                       form.
                     </p> */}
-                    </div>
-                  </TabsTrigger>
-                </TabsList>
+                        </div>
+                      </TabsTrigger>
+                    </TabsList>
 
-                {/* ✅ 디지털 위임 탭: 이미지 업로드 */}
-                <TabsContent value="digital">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Digital Authorization</CardTitle>
-                      <CardDescription>
-                        Upload a signature image to instantly authorize via
-                        electronic Power of Attorney.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-6">
-                      <div className="grid gap-3">
-                        <Label htmlFor="tabs-demo-name">Signature Image</Label>
-                        {croppedImage ? (
-                          <div className="relative w-full max-w-xs">
-                            <img
-                              src={URL.createObjectURL(croppedImage)}
-                              alt="미리보기 이미지"
-                              className="w-full rounded border object-contain shadow"
-                            />
-                            <Button
-                              variant="ghost"
-                              onClick={() => setCroppedImage(null)} // ❌ 이미지 초기화
-                              className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
-                            >
-                              Re-select
-                            </Button>
+                    {/* ✅ 디지털 위임 탭: 이미지 업로드 */}
+                    <TabsContent value="digital">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Digital Authorization</CardTitle>
+                          <CardDescription>
+                            Upload a signature image to instantly authorize via
+                            electronic Power of Attorney.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-6">
+                          <div className="grid gap-3">
+                            <Label htmlFor="tabs-demo-name">
+                              Signature Image
+                            </Label>
+                            {croppedImage ? (
+                              <div className="relative w-full max-w-xs">
+                                <img
+                                  src={URL.createObjectURL(croppedImage)}
+                                  alt="signature preview"
+                                  className="w-full rounded border object-contain shadow"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => setCroppedImage(null)} // ❌ 이미지 초기화
+                                  className="absolute top-1 right-1 rounded bg-white/80 px-2 py-1 text-xs hover:bg-white"
+                                >
+                                  Re-select
+                                </Button>
+                              </div>
+                            ) : (
+                              <ImageDropzone
+                                rawImage={rawImage}
+                                setRawImage={setRawImage}
+                                finalImage={finalImage}
+                                setFinalImage={setFinalImage}
+                                showEditor={showEditor}
+                                setShowEditor={setShowEditor}
+                              />
+                            )}
                           </div>
-                        ) : (
-                          <ImageDropzone
-                            rawImage={rawImage}
-                            setRawImage={setRawImage}
-                            finalImage={finalImage}
-                            setFinalImage={setFinalImage}
-                            showEditor={showEditor}
-                            setShowEditor={setShowEditor}
-                          />
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-row justify-end">
-                      <div className="flex flex-col items-end gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={async () => {
-                            // ✅ 조건 검사
-                            if (!croppedImage) {
-                              toast.error("Signature image is required.");
-                              return;
-                            }
-
-                            if (!nameEn || nameEn.trim() === "") {
-                              toast.error("Please enter the applicant's name.");
-                              return;
-                            }
-
-                            if (!addressEn || addressEn.trim() === "") {
-                              toast.error(
-                                "Please enter the applicant's address.",
-                              );
-                              return;
-                            }
-
-                            // ✅ 문제 없을 경우 PDF 생성
-                            handleGeneratePdf();
-                            // generatePOAClient({
-                            //   elementId: "pdf-area",
-                            //   filename: `POA_${nameEn}.pdf`,
-                            // });
-                          }}
-                        >
-                          <FileCheck2Icon className="mr-2" /> Generate POA with
-                          uploaded signature
-                        </Button>
-                        {selectedFile && (
-                          <div className="flex flex-row items-center gap-1 text-sm font-light text-green-600">
-                            {/* 클릭 시 새 탭으로 미리보기 */}
-                            <div
-                              className="cursor-pointer hover:underline"
-                              onClick={() => {
-                                const url = URL.createObjectURL(selectedFile);
-                                window.open(url, "_blank");
-                              }}
+                        </CardContent>
+                        <CardFooter className="flex flex-col items-end gap-4">
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className={
+                                !croppedImage ? "cursor-not-allowed" : ""
+                              }
                             >
-                              <strong>{selectedFile.name}</strong> (
-                              {(selectedFile.size / 1024).toFixed(1)} KB)
+                              <Button
+                                variant="outline"
+                                disabled={!croppedImage}
+                                onClick={async () => {
+                                  if (!croppedImage) {
+                                    toast.error("Signature image is required.");
+                                    return;
+                                  }
+                                  if (!firstName?.trim()) {
+                                    toast.error(
+                                      "Please enter the applicant's first name.",
+                                    );
+                                    return;
+                                  }
+                                  if (!lastName?.trim()) {
+                                    toast.error(
+                                      "Please enter the applicant's last name.",
+                                    );
+                                    return;
+                                  }
+                                  if (!addressEn?.trim()) {
+                                    toast.error(
+                                      "Please enter the applicant's address.",
+                                    );
+                                    return;
+                                  }
+
+                                  handleGeneratePdf();
+                                }}
+                                className={
+                                  !croppedImage
+                                    ? "pointer-events-none cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400"
+                                    : ""
+                                }
+                              >
+                                <FileCheck2Icon className="mr-2" />
+                                Generate POA with uploaded signature
+                              </Button>
+                            </span>
+                            {selectedFile && (
+                              <div className="flex flex-row items-center gap-1 text-sm font-light text-green-600">
+                                {/* 클릭 시 새 탭으로 미리보기 */}
+                                <div
+                                  className="cursor-pointer hover:underline"
+                                  onClick={() => {
+                                    const url =
+                                      URL.createObjectURL(selectedFile);
+                                    window.open(url, "_blank");
+                                  }}
+                                >
+                                  <strong>{selectedFile.name}</strong> (
+                                  {(selectedFile.size / 1024).toFixed(1)} KB)
+                                </div>
+                                {/* X 아이콘 클릭 시 삭제 */}
+                                <button
+                                  onClick={() => setSelectedFile(null)}
+                                  className="text-green-600 hover:text-red-700"
+                                  aria-label="Remove file"
+                                >
+                                  <XIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex w-full flex-col items-center">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                id="toggle"
+                                disabled={!selectedFile}
+                                checked={agreed2}
+                                onCheckedChange={(checked) =>
+                                  setAgreed2(Boolean(checked))
+                                }
+                              />
+                              <Label
+                                htmlFor="toggle"
+                                className="font-bold text-black"
+                              >
+                                I have read and agree to the Power of Attorney
+                                Agreement.
+                              </Label>
                             </div>
-
-                            {/* X 아이콘 클릭 시 삭제 */}
-                            <button
-                              onClick={() => setSelectedFile(null)}
-                              className="text-green-600 hover:text-red-700"
-                              aria-label="Remove file"
-                            >
-                              <XIcon className="h-4 w-4" />
-                            </button>
                           </div>
-                        )}
-                      </div>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
+                        </CardFooter>
+                      </Card>
+                    </TabsContent>
 
-                {/* ✅ 종이 기반 위임 탭: PDF 업로드 */}
-                <TabsContent value="paper">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Paper-Based Authorization</CardTitle>
-                      <CardDescription>
-                        Download the Power of Attorney form, sign it manually,
-                        and upload a scanned PDF.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-6">
-                      <div className="grid gap-3">
-                        <Label htmlFor="tabs-demo-pdf">
-                          Signed POA Document (PDF)
-                        </Label>
-                        <FileDropzone onFileSelect={() => {}} />
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-row justify-end">
-                      <Button variant="outline">
-                        <FileCheck2Icon />
-                        Upload Completed POA
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-            <div className="mt-6">
-              <Button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? "Saving..." : "Save Applicant"}
-              </Button>
-            </div>
+                    {/* ✅ 종이 기반 위임 탭: PDF 업로드 */}
+                    <TabsContent value="paper">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Paper-Based Authorization</CardTitle>
+                          <CardDescription>
+                            Please download the Power of Attorney (POA) form and
+                            sign it manually. Send it directly to{" "}
+                            <strong>brandit@brandit-ip.com</strong>
+                          </CardDescription>
+                          <CardDescription>
+                            The process usually takes{" "}
+                            <strong>2–3 business days</strong> to complete after
+                            we receive your signed document.
+                            <p className="text-muted-foreground mt-3 text-sm">
+                              You{" "}
+                              <strong>
+                                can complete and submit the application form to
+                                us
+                              </strong>{" "}
+                              before sending back the signed POA.
+                            </p>
+                            <p className="text-muted-foreground mt-3 text-sm">
+                              However, we will{" "}
+                              <strong>not be able to submit</strong> the
+                              application to the Patent Office until we receive
+                              the signed POA.
+                            </p>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex flex-col items-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={handleDownloadPOAForm}
+                          >
+                            <FileCheck2Icon />
+                            Download POA Form
+                          </Button>
+                          {/* <Button
+                            variant="outline"
+                            onClick={sendPOAFormToEmail}
+                          >
+                            <MailIcon />
+                            Receive POA Form to {user.email}
+                          </Button> */}
+                        </CardFooter>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+                <div className="mt-6">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isLoading || !agreed2}
+                    className="w-full"
+                  >
+                    {isLoading ? "Saving..." : "Save Applicant"}
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </SheetContent>
         <div
           id="pdf-area"
-          className="pointer-events-none absolute top-0 left-0 z-[-9999] min-h-[297mm] w-[210mm] bg-white p-10 font-serif text-sm text-black"
+          className="pointer-events-none absolute top-0 left-0 z-[-9999] hidden h-[297mm] w-[210mm] bg-white p-10 font-serif text-sm text-black"
         >
           <div className="flex flex-col gap-0 text-xs">
             <p>LIDAM IP LAW FIRM</p>
@@ -649,10 +1228,19 @@ export function ApplicantSheet({
             </p>
 
             <div className="mt-6 inline-flex items-center gap-2">
-              By:
+              By:{" "}
               {signatureUrl ? (
                 <img src={signatureUrl} alt="signature" className="w-[200px]" />
-              ) : null}
+              ) : (
+                <div className="h-[60px] w-[200px] border-b border-dashed" />
+              )}
+            </div>
+            <div className="text-md flex flex-row justify-end gap-2">
+              <div>{signerName ? <strong>{signerName}</strong> : null}</div>
+              <span>&nbsp; / &nbsp;</span>
+              <div>
+                {signerPosition ? <strong>{signerPosition}</strong> : null}
+              </div>
             </div>
           </div>
         </div>

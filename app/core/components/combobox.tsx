@@ -53,8 +53,10 @@ export function Combobox({
   const toggleSelection = (item: any) => {
     if (isSelected(item)) {
       setItems((prev) => prev.filter((selected) => selected.id !== item.id));
+      console.log("removed", items);
     } else {
       setItems((prev) => [...prev, item]);
+      console.log("added", items);
     }
   };
 

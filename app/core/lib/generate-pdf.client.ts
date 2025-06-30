@@ -4,48 +4,44 @@ export async function generatePOAClient({
 }: {
   elementId: string;
   filename: string;
-}) {
-  console.log("[PDF] 시작: PDF 생성 시도");
-
+}): Promise<File | null> {
   const { jsPDF } = await import("jspdf");
   const html2canvas = (await import("html2canvas")).default;
 
   const element = document.getElementById(elementId);
   if (!element) {
     console.error("[PDF] 요소를 찾을 수 없습니다:", elementId);
-    return;
+    return null;
   }
 
-  const canvas = await html2canvas(element);
-  document.body.appendChild(canvas); // 이걸 추가하면 실제 캡처된 이미지가 화면에 보입니다!
+  // ✅ 1. hidden 클래스 제거 (강제로 렌더링되도록)
+  const originalClass = element.className;
+  element.classList.remove("hidden");
 
+  // ✅ 2. 캔버스 생성
+  const canvas = await html2canvas(element);
   const imgData = canvas.toDataURL("image/jpeg");
+
+  // ✅ 3. 다시 hidden 처리
+  element.className = originalClass;
+
   if (!imgData || imgData === "data:,") {
-    return;
+    return null;
   }
 
   const pdf = new jsPDF("p", "mm", "a4");
   const width = pdf.internal.pageSize.getWidth();
-  if (!canvas.width || !canvas.height) {
-    console.error(
-      "[PDF] ❌ 캔버스 비정상. width:",
-      canvas.width,
-      "height:",
-      canvas.height,
-    );
-    return;
-  }
   const height = (canvas.height * width) / canvas.width;
 
   pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
-  // pdf.save(filename);
-  // ✅ 브라우저 새 탭에서 PDF 미리보기
-  const pdfBlobUrl = pdf.output("bloburl");
-  window.open(pdfBlobUrl, "_blank");
-
-  // ✅ File로 변환
+  // ✅ File 객체로 반환
   const blob = pdf.output("blob");
   const file = new File([blob], filename, { type: "application/pdf" });
+
+  // ✅ 미리보기
+  const blobUrl = URL.createObjectURL(file);
+  window.open(blobUrl, "_blank");
+
   return file;
 }

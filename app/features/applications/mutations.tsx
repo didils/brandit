@@ -1,7 +1,6 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "database.types";
-
 import type { Inventor } from "./screens/provisional-application/start";
+
+import { toast } from "sonner";
 
 import { browserClient } from "~/core/lib/browser-client";
 
@@ -84,4 +83,62 @@ export async function insertPatentRecord(
   }
 
   return true;
+}
+
+type EntityInput = {
+  user_id: string;
+  name_kr: string;
+  name_en?: string;
+  address_kr?: string;
+  address_en?: string;
+  country?: string;
+  has_poa?: boolean; // 기본값 true
+  signature_image_url?: string;
+  signer_position: string;
+  signer_name?: string;
+  representative_name?: string;
+};
+
+export async function insertEntity(data: EntityInput) {
+  const {
+    user_id,
+    name_kr,
+    name_en,
+    address_kr,
+    address_en,
+    country,
+    has_poa = true,
+    signature_image_url,
+    signer_position,
+    signer_name,
+    representative_name,
+  } = data;
+
+  const { data: inserted, error } = await browserClient
+    .from("entities")
+    .insert([
+      {
+        user_id,
+        name_kr,
+        name_en,
+        address_kr,
+        address_en,
+        country,
+        has_poa,
+        signature_image_url,
+        signer_position,
+        signer_name,
+        representative_name,
+      },
+    ]);
+
+  if (error) {
+    console.error("❌ Entity insert error:", error.message);
+    toast.error(error.message);
+    return null;
+  }
+
+  toast.success("Entity saved");
+
+  return inserted;
 }

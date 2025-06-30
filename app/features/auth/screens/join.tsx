@@ -174,7 +174,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Join({ actionData }: Route.ComponentProps) {
   // Reference to the form element for resetting after successful submission
   const formRef = useRef<HTMLFormElement>(null);
-  
+
   // Reset the form when registration is successful
   useEffect(() => {
     if (actionData && "success" in actionData && actionData.success) {
@@ -317,8 +317,10 @@ export default function Join({ actionData }: Route.ComponentProps) {
               <Alert className="bg-green-600/20 text-green-700 dark:bg-green-950/20 dark:text-green-600">
                 <CheckCircle2Icon
                   className="size-4"
-                  color="oklch(0.627 0.194 149.214)"
+                  color="#2e9f65" // 또는 rgb(46, 159, 101)
+                  // or color="hsl(149, 54%, 40%)"
                 />
+
                 <AlertTitle>Account created!</AlertTitle>
                 <AlertDescription className="text-green-700 dark:text-green-600">
                   Before you can sign in, please verify your email. You can

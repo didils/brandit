@@ -1,5 +1,6 @@
 import { AlertCircleIcon, FileCheck2Icon, MailIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { Button } from "~/core/components/ui/button";
@@ -45,12 +46,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
 
 const signerPositions = [
   { label: "CEO", value: "CEO" },
@@ -152,6 +147,8 @@ export function ApplicantSheet({
   const [agreed2, setAgreed2] = useState(false);
   const [customPrefix, setCustomPrefix] = useState<string>("");
   const [companyName, setCompanyName] = useState("");
+
+  const { revalidate } = useRevalidator();
 
   // ✅ 법인 전용
   const [signerPosition, setSignerPosition] = useState("");
@@ -308,7 +305,7 @@ export function ApplicantSheet({
         .select()
         .single();
 
-      console.log("data from insert at applicant sheet", data);
+      revalidate();
 
       if (error || !data) {
         console.error("failed to save:", error?.message);

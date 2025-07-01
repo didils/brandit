@@ -28,24 +28,18 @@ export function CompletionEstimator({ isUrgent, onEstimate }: Props) {
       const localNow = new Date();
       setLocalNow(localNow);
 
-      const threePMKST_utc = new Date(
-        Date.UTC(
-          nowKST.getFullYear(),
-          nowKST.getMonth(),
-          nowKST.getDate(),
-          6,
-          0,
-          0,
-        ),
+      const threePMKST = new Date(
+        nowKST.getFullYear(),
+        nowKST.getMonth(),
+        nowKST.getDate(),
+        15,
+        0,
+        0,
       );
-
-      const isBefore3PMKST = isBefore(
-        nowKST,
-        new Date(threePMKST_utc.getTime() + 9 * 60 * 60 * 1000),
-      );
+      const isBefore3PMKST = isBefore(nowKST, threePMKST);
       setCanSubmitToday(isBefore3PMKST);
 
-      const localDeadline = new Date(threePMKST_utc).toLocaleString(undefined, {
+      const localDeadline = threePMKST.toLocaleString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -89,7 +83,7 @@ export function CompletionEstimator({ isUrgent, onEstimate }: Props) {
         isBefore3PMKST ? 0 : 1,
         holidays,
       );
-      const standard = addBusinessDaysWithHolidays(nowKST, 4, holidays);
+      const standard = addBusinessDaysWithHolidays(nowKST, 3, holidays);
 
       setUrgentDate(urgent);
       setStandardDate(standard);
@@ -108,12 +102,28 @@ export function CompletionEstimator({ isUrgent, onEstimate }: Props) {
     <div className="mt-6 w-full max-w-xl space-y-2 rounded-lg bg-[#f5f6f8] p-4 text-sm text-gray-700 shadow-sm">
       <div>
         <strong>Current time in Korea:</strong>{" "}
-        {format(koreanNow, "PPPp", { locale: enUS })}
+        {new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Seoul", // ✅ 핵심
+        }).format(new Date())}
       </div>
       <div>
         <strong>Your local time:</strong>{" "}
-        {format(localNow, "PPPp", { locale: enUS })}
+        {new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }).format(new Date())}
       </div>
+
       <div>
         <strong>Estimated completion:</strong>{" "}
         {isUrgent && urgentDate

@@ -142,3 +142,31 @@ export async function insertEntity(data: EntityInput) {
 
   return inserted;
 }
+
+type InventorInput = {
+  user_id: string;
+  name_kr: string;
+  name_en: string;
+  address_kr: string;
+  address_en: string;
+  nationality: string;
+  residence_country: string;
+};
+
+// ✅ 삽입 후 삽입된 행 반환
+export async function insertInventor(data: InventorInput) {
+  const { data: inserted, error } = await browserClient
+    .from("inventors")
+    .insert([data])
+    .select()
+    .single(); // 한 행만 반환
+
+  if (error) {
+    console.error("❌ Inventor insert error:", error.message);
+    toast.error(error.message);
+    return null;
+  }
+
+  toast.success("Inventor saved");
+  return inserted; // ✅ 삽입된 객체 반환
+}

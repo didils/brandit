@@ -23,6 +23,10 @@ export default [
       "/applications/provisional-application/start",
       "features/applications/screens/provisional-application/start.tsx",
     ),
+    route(
+      "/applications/provisional-application/payment",
+      "features/applications/screens/provisional-application/payment.tsx",
+    ),
   ]),
   ...prefix("/debug", [
     // You should delete this in production.

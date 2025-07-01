@@ -23,6 +23,7 @@ import {
   useLocation,
   useNavigate,
   useNavigationType,
+  useRevalidator,
 } from "react-router";
 import { toast } from "sonner";
 
@@ -75,6 +76,14 @@ import { FileDropzone } from "~/core/components/ui/filedropzone";
 import { FormErrorAlert } from "~/core/components/ui/form-error-alert";
 import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/core/components/ui/select";
 import { Separator } from "~/core/components/ui/separator";
 import {
   Tooltip,
@@ -83,6 +92,8 @@ import {
 } from "~/core/components/ui/tooltip";
 import { browserClient } from "~/core/lib/browser-client";
 import { cn } from "~/core/lib/utils";
+
+import { insertInventor } from "../../mutations";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { default: makeServerClient } = await import(
@@ -165,6 +176,11 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [croppedImage, setCroppedImage] = useState<File | null>(null);
+  const [isInlineOpen, setIsInlineOpen] = useState(false);
+  const [inventorName, setInventorName] = useState("");
+  const [inventorAddress, setInventorAddress] = useState("");
+
+  const { revalidate } = useRevalidator();
 
   const handleImageSelect = (file: File) => {
     setImageFile(file);
@@ -205,6 +221,26 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [addressEn, setAddressEn] = useState("");
+  const [customInventorCountry, setCustomInventorCountry] = useState("");
+  const [selectedInventorCountry, setSelectedInventorCountry] = useState("");
+
+  const [customInventorResidenceCountry, setCustomInventorResidenceCountry] =
+    useState("");
+  const [
+    selectedInventorResidenceCountry,
+    setSelectedInventorResidenceCountry,
+  ] = useState("");
+
+  const countries = [
+    { name: "United States", code: "US" },
+    { name: "South Korea", code: "KR" },
+    { name: "China", code: "CN" },
+    { name: "Japan", code: "JP" },
+  ];
+
+  function handleInlineOpen() {
+    setIsInlineOpen(true);
+  }
 
   function useResponsiveIsHidden() {
     const [isHidden, setIsHidden] = useState(false);
@@ -247,6 +283,16 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   const rightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isInlineOpen) {
+      setIsInventorMissing(false);
+    }
+  }, [isInlineOpen]);
+
+  // useEffect(() => {
+  //   console.log("🚀 [useEffect] selectedInventors", selectedInventors);
+  // }, [selectedInventors]);
+
+  useEffect(() => {
     // ✅ 좌우 ref가 모두 연결됐는지 체크 (초기 렌더 시점)
     if (!leftRef.current || !rightRef.current) return;
 
@@ -274,32 +320,32 @@ export default function Start({ loaderData }: Route.ComponentProps) {
     };
   }, [leftRef.current, rightRef.current]); // ✅ 안전하게 리렌더링 대응
 
-  useEffect(() => {
-    const wasJustSubmitted = sessionStorage.getItem("submitted-provisional");
-    if (wasJustSubmitted === "true") {
-      sessionStorage.removeItem("submitted-provisional");
-      navigate("/dashboard/provisional-applications", { replace: true });
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const wasJustSubmitted = sessionStorage.getItem("submitted-provisional");
+  //   if (wasJustSubmitted === "true") {
+  //     sessionStorage.removeItem("submitted-provisional");
+  //     navigate("/dashboard/provisional-applications", { replace: true });
+  //   }
+  // }, [navigate]);
 
-  useEffect(() => {
-    // 1. 컴포넌트 마운트 시 더미 히스토리 스택 쌓기
-    window.history.pushState({ modalOpen: false }, "");
+  // useEffect(() => {
+  //   // 1. 컴포넌트 마운트 시 더미 히스토리 스택 쌓기
+  //   window.history.pushState({ modalOpen: false }, "");
 
-    const handlePopState = (event: PopStateEvent) => {
-      // 2. 뒤로가기가 눌리면 모달 오픈
-      setIsCanceled(true);
+  //   const handlePopState = (event: PopStateEvent) => {
+  //     // 2. 뒤로가기가 눌리면 모달 오픈
+  //     setIsCanceled(true);
 
-      // 3. 이동 "되돌리기" - 현재 URL을 다시 push
-      navigate(location.pathname, { replace: true });
-    };
+  //     // 3. 이동 "되돌리기" - 현재 URL을 다시 push
+  //     navigate(location.pathname, { replace: true });
+  //   };
 
-    window.addEventListener("popstate", handlePopState);
+  //   window.addEventListener("popstate", handlePopState);
 
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, [location, navigate]);
+  //   return () => {
+  //     window.removeEventListener("popstate", handlePopState);
+  //   };
+  // }, [location, navigate]);
 
   // ✅ 브라우저 환경에서만 browserClient를 초기화
   useEffect(() => {
@@ -859,7 +905,7 @@ export default function Start({ loaderData }: Route.ComponentProps) {
               }}
             />
 
-            <div>
+            {!isInlineOpen && (
               <Combobox
                 comboName="inventor"
                 labelName="Inventor"
@@ -870,9 +916,175 @@ export default function Start({ loaderData }: Route.ComponentProps) {
                 onClick={() => setIsInventorMissing(false)}
                 isApplicantMissing={isApplicantMissing}
                 isInventorMissing={isInventorMissing}
-                onAddNew={() => setIsInventorSheetOpen(true)}
+                onAddNew={handleInlineOpen}
               />
-            </div>
+            )}
+            {isInlineOpen && (
+              <div className="flex w-2/3 flex-col">
+                <Label className="flex flex-col items-start text-lg">
+                  Inventor information
+                </Label>
+                <small className="text-muted-foreground pb-1.5 text-sm font-light">
+                  Please fill in the inventor's information.
+                </small>
+                {/* ✅ 발명자 국적 선택 */}
+                <div className="mt-4 flex flex-col gap-1">
+                  <Label>Nationality of the inventor</Label>
+                  <div className="flex w-full flex-row justify-between gap-1">
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "etc") {
+                          setSelectedInventorCountry("etc"); // 초기화 (선택된 국가 없음)
+                        } else {
+                          setSelectedInventorCountry(value); // 일반 국가 선택 시 설정
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder="Select a nationality"
+                          // value는 외부에서 관리하므로 selectedCountry 사용
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {/* <SelectLabel>Nationality of the applicant</SelectLabel> */}
+                          {countries.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="etc">Other nationality</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    {/* ❗ "기타 국가"를 선택했을 때만 input 표시 */}
+                    {selectedInventorCountry === "etc" && (
+                      <Input
+                        placeholder="Enter nationality"
+                        value={customInventorCountry}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          setCustomInventorCountry(inputValue);
+                          //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+                {/* ✅ 발명자 거주국 선택 */}
+                <div className="mt-4 flex flex-col gap-1">
+                  <Label>Residence country of the inventor</Label>
+                  <div className="flex w-full flex-row justify-between gap-1">
+                    <Select
+                      onValueChange={(value) => {
+                        if (value === "etc") {
+                          setSelectedInventorResidenceCountry("etc"); // 초기화 (선택된 국가 없음)
+                        } else {
+                          setSelectedInventorResidenceCountry(value); // 일반 국가 선택 시 설정
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder="Select a residence country"
+                          // value는 외부에서 관리하므로 selectedCountry 사용
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {/* <SelectLabel>Nationality of the applicant</SelectLabel> */}
+                          {countries.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="etc">
+                            Other residence country
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    {/* ❗ "기타 국가"를 선택했을 때만 input 표시 */}
+                    {selectedInventorResidenceCountry === "etc" && (
+                      <Input
+                        placeholder="Enter residence country"
+                        value={customInventorResidenceCountry}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          setCustomInventorResidenceCountry(inputValue);
+                          //   setSelectedCountry(inputValue); // 입력된 국가를 selectedCountry로 설정
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-col gap-1">
+                  <Label>Full name of the inventor</Label>
+                  <Input
+                    placeholder="Enter name"
+                    value={inventorName}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      setInventorName(inputValue);
+                    }}
+                  />
+                </div>
+                <div className="mt-4 flex flex-col gap-1">
+                  <Label>Address of the inventor</Label>
+                  <Input
+                    placeholder="Enter address"
+                    value={inventorAddress}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      setInventorAddress(inputValue);
+                    }}
+                  />
+                </div>
+                <div className="mt-4 flex flex-row justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    className="h-8"
+                    onClick={() => setIsInlineOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    className="h-8 px-4"
+                    onClick={async () => {
+                      try {
+                        const newInventor = await insertInventor({
+                          user_id: loaderData.user?.id ?? "",
+                          name_kr: inventorName,
+                          name_en: inventorName,
+                          address_kr: inventorAddress,
+                          address_en: inventorAddress,
+                          nationality: selectedInventorCountry,
+                          residence_country: selectedInventorResidenceCountry,
+                        });
+
+                        // ✅ 추가된 발명자를 배열에 추가
+                        if (newInventor) {
+                          setSelectedInventors((prev) => [
+                            ...prev,
+                            newInventor as Inventor,
+                          ]);
+                        }
+
+                        // ✅ 인라인 입력창 닫기
+                        setIsInlineOpen(false);
+                        revalidate();
+                      } catch (error) {
+                        console.error("발명자 추가 중 오류:", error);
+                      }
+                    }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col items-start">
               <Label
                 htmlFor="file"

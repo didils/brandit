@@ -16,6 +16,7 @@ export type Database = {
           client_code: string | null
           country: string | null
           created_at: string
+          entity_type: string | null
           has_poa: boolean | null
           id: string
           name_en: string | null
@@ -33,6 +34,7 @@ export type Database = {
           client_code?: string | null
           country?: string | null
           created_at?: string
+          entity_type?: string | null
           has_poa?: boolean | null
           id?: string
           name_en?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           client_code?: string | null
           country?: string | null
           created_at?: string
+          entity_type?: string | null
           has_poa?: boolean | null
           id?: string
           name_en?: string | null
@@ -496,40 +499,19 @@ export type Database = {
         }[]
       }
       create_provisional_application: {
-        Args:
-          | {
-              p_user_id: string
-              p_title_en: string
-              p_applicant: Json
-              p_attached_files: Json
-            }
-          | {
-              p_user_id: string
-              p_title_en: string
-              p_applicant: Json
-              p_inventor: Json
-              p_attached_files: Json
-            }
-          | {
-              p_user_id: string
-              p_title_en: string
-              p_applicant: Json
-              p_inventor: Json
-              p_attached_files: Json
-              p_client_request: string
-              p_is_urgent: boolean
-            }
-          | {
-              p_user_id: string
-              p_title_en: string
-              p_applicant: Json
-              p_inventor: Json
-              p_attached_files: Json
-              p_status: string
-            }
+        Args: {
+          p_user_id: string
+          p_title_en: string
+          p_applicant: Json
+          p_inventor: Json
+          p_attached_files: Json
+          p_client_request: string
+          p_is_urgent: boolean
+        }
         Returns: {
           patent_id: string
           our_ref: string
+          process_id: string
         }[]
       }
       pop: {
@@ -565,6 +547,7 @@ export type Database = {
         Returns: {
           patent_id: string
           our_ref: string
+          process_id: string
         }[]
       }
     }

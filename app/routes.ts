@@ -27,6 +27,10 @@ export default [
       "/applications/provisional-application/payment",
       "features/applications/screens/provisional-application/payment.tsx",
     ),
+    route(
+      "/applications/provisional-application/:patent_id/:process_id/confirm",
+      "features/applications/screens/provisional-application/confirm.tsx",
+    ),
   ]),
   ...prefix("/debug", [
     // You should delete this in production.

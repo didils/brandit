@@ -209,8 +209,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
   // const [textareaValue, setTextareaValue] = useState("");
   // ✅ Sheet 열림 상태
   const [isApplicantSheetOpen, setIsApplicantSheetOpen] = useState(false);
-  const [isInventorSheetOpen, setIsInventorSheetOpen] = useState(false);
-  const [staffNote, setStaffNote] = useState("");
   const [clientRequest, setClientRequest] = useState("");
   const [isHidden, setIsHidden] = useResponsiveIsHidden();
   const [isTitleMissing, setIsTitleMissing] = useState(false);
@@ -456,50 +454,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
     } else {
       setIsSubmittingDraft(true);
     }
-    // setIsSubmitting(true);
-
-    // try {
-    //   const userId = loaderData.user?.id;
-    //   if (!supabase || !userId) return;
-
-    //   // ✅ 파일 업로드 (draft는 파일 없이도 허용)
-    //   let uploadedFileInfo = null;
-    //   if (selectedFile) {
-    //     const safeFileName = (name: string) =>
-    //       name
-    //         .normalize("NFKD")
-    //         .replace(/[\u0300-\u036f]/g, "")
-    //         .replace(/[^\w.\-]/g, "_");
-    //     const safeName = safeFileName(selectedFile.name);
-    //     const timestamp = Date.now();
-    //     const path = `${userId}/temp/${timestamp}_${safeName}`;
-
-    //     const { error: uploadError } = await supabase.storage
-    //       .from("provisional-application")
-    //       .upload(path, selectedFile, {
-    //         contentType: selectedFile.type,
-    //         upsert: true,
-    //       });
-
-    //     if (uploadError) {
-    //       toast.error("File upload failed.");
-    //       return;
-    //     } else {
-    //       console.log("🚀 [handleUpload] 실행됨 2", {
-    //         path,
-    //       });
-    //       setFilePath(path);
-    //       console.log("🚀 [handleUpload] 실행됨 3", {
-    //         filePath,
-    //       });
-    //     }
-
-    //     uploadedFileInfo = {
-    //       name: "provisional_application",
-    //       url: path,
-    //       type: selectedFile.type,
-    //     };
-    //   }
 
     // ✅ 유효성 통과 후에만 로딩 상태 설정
     if (uploadType === "draft" && existingDraftId === null) {
@@ -521,10 +475,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           contentType: selectedFile.type,
           upsert: true,
         });
-
-      console.log("🛠️ [handleUpload] 파일 업로드 실패", {
-        uploadError,
-      });
 
       if (uploadError) {
         toast.error("파일 업로드 실패");
@@ -578,9 +528,6 @@ export default function Start({ loaderData }: Route.ComponentProps) {
           contentType: selectedFile?.type ?? "",
           upsert: true,
         });
-      console.log("🛠️ [handleUpload] 파일 업로드 실패", {
-        uploadError,
-      });
 
       if (uploadError) {
         toast.error("파일 업로드 실패");
@@ -629,9 +576,15 @@ export default function Start({ loaderData }: Route.ComponentProps) {
       if (error) {
         toast.error("Upload failed");
       } else {
+        const { patent_id, process_id } = data?.[0] ?? {};
         setIsSubmittingCheckout(false);
-        sessionStorage.setItem("submitted-provisional", "true");
-        navigate("/dashboard/provisional-applications");
+        // sessionStorage.setItem("submitted-provisional", "true");
+        navigate(
+          `/applications/provisional-application/${patent_id}/${process_id}/confirm`,
+          {
+            replace: true,
+          },
+        );
       }
     }
     if (uploadType === "checkout" && existingDraftId !== null) {
@@ -706,51 +659,11 @@ export default function Start({ loaderData }: Route.ComponentProps) {
         toast.error("업데이트 실패");
       } else {
         console.log("✅ provisional 업데이트 완료", data);
-        sessionStorage.setItem("submitted-provisional", "true");
+        // sessionStorage.setItem("submitted-provisional", "true");
         setIsSubmittingCheckout(false);
-        navigate("/dashboard/provisional-applications");
+        // navigate("/dashboard/provisional-applications");
       }
     }
-
-    // ✅ DB 등록 (status 포함)
-    // const params = {
-    //   p_patent_id: existingDraftId ?? null,
-    //   p_process_id: existingProcessId ?? null,
-    //   p_user_id: userId,
-    //   p_title_en: title,
-    //   p_applicant: selectedApplicants,
-    //   p_inventor: selectedInventors,
-    //   p_attached_files: uploadedFileInfo ? [uploadedFileInfo] : [],
-    //   p_status: uploadType === "draft" ? "draft" : "awaiting_payment",
-    // };
-
-    // const { data, error } = await supabase.rpc<ProvisionalAppResult>(
-    //   "create_or_update_provisional_application",
-    //   params,
-    // );
-    // console.log("🚀 [handleUpload] 실행됨 1", {
-    //   data,
-    //   error,
-    // });
-
-    // ✅ data는 ProvisionalAppResult[] 형태로 반환됨
-
-    // console.log("🚀 [handleUpload] 실행됨 1.5", {
-    //   data,
-    //   error,
-    //   existingDraftId,
-    // });
-    // } catch (err) {
-    //   toast.error("A system error occurred.");
-    // } finally {
-    //   if (uploadType === "checkout") {
-    //     setIsSubmittingCheckout(false);
-    //     navigate("/applications/payment");
-    //   } else {
-    //     setIsSubmittingDraft(false);
-    //     setIsDialogOpen(true);
-    //   }
-    // }
   };
 
   return (

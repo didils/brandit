@@ -41,6 +41,8 @@
     "@sentry/browser": "^9.6.1",
     "@sentry/profiling-node": "^9.10.1",
     "@sentry/react-router": "^9.10.1",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.1",
     "@tosspayments/tosspayments-sdk": "^2.3.4",
@@ -78,6 +80,7 @@
     "resend": "^4.2.0",
     "satori": "^0.12.2",
     "sonner": "^2.0.1",
+    "stripe": "^18.3.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"

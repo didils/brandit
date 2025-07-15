@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/core/components/ui/tooltip";
+import { browserClient } from "~/core/lib/browser-client";
 import makeServerClient from "~/core/lib/supa-client.server";
 
 export const meta: Route.MetaFunction = () => {
@@ -88,6 +89,7 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
   const [twoMonths, setTwoMonths] = useState(false);
   const [oneMonth, setOneMonth] = useState(false);
   const [twoWeeks, setTwoWeeks] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   // ✅ switch가 켜질 때 모든 알림 버튼을 true로 설정
   useEffect(() => {
@@ -98,6 +100,23 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
       setTwoWeeks(true);
     }
   }, [isReminderEnabled]);
+
+  const handleView = async () => {
+    const filePath = (process.attached_files as any[])[0].url;
+
+    const { data, error } = await browserClient.storage
+      .from("provisional-application") // ✅ your bucket name
+      .createSignedUrl(filePath, 60); // 유효기간 60초
+
+    if (error) {
+      console.error("❌ Error generating signed URL:", error.message);
+      return;
+    }
+
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    }
+  };
 
   return (
     <div className="flex w-full flex-col items-center pt-0 pb-8">
@@ -192,6 +211,7 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
             <Button
               variant="link"
               className="pl-1 text-sm hover:bg-transparent"
+              onClick={handleView}
             >
               View application file
             </Button>
@@ -253,7 +273,7 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
         </div>
         <Separator className="my-4" />
         <div className="flex flex-col items-start gap-2 px-4 py-2">
-          <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+          <Label className="flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
             <Switch
               id="email-notification"
               checked={isReminderEnabled}
@@ -316,11 +336,14 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
             </div>
           </Label>
         </div>
-        <div className="flex flex-col items-start gap-2 px-4 py-2">
+        <div className="flex flex-col gap-2 px-4 py-2">
           <Label className="flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
             <Checkbox
               id="toggle-2"
-              defaultChecked
+              checked={isConfirmed}
+              onCheckedChange={(checked) =>
+                setIsConfirmed(checked === "indeterminate" ? false : checked)
+              }
               className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
             />
             <div className="grid gap-1.5 font-normal">
@@ -333,6 +356,11 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
               </p>
             </div>
           </Label>
+        </div>
+        <div className="flex w-full flex-col items-center justify-center gap-2 px-4 py-5">
+          <Button className="w-1/2" disabled={!isConfirmed}>
+            Checkout
+          </Button>
         </div>
       </div>
     </div>

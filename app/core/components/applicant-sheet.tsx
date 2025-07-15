@@ -147,6 +147,8 @@ export function ApplicantSheet({
   const [agreed2, setAgreed2] = useState(false);
   const [customPrefix, setCustomPrefix] = useState<string>("");
   const [companyName, setCompanyName] = useState("");
+  const [addressEnLine1, setAddressEnLine1] = useState("");
+  const [addressEnLine2, setAddressEnLine2] = useState("");
 
   const { revalidate } = useRevalidator();
 
@@ -163,7 +165,7 @@ export function ApplicantSheet({
       elementId: "pdf-area",
       filename: "POA.pdf",
     });
-    console.log("pdf", file);
+    // console.log("pdf", file);
     if (file) {
       setSelectedFile(file as unknown as File);
     }
@@ -225,6 +227,10 @@ export function ApplicantSheet({
       setNameEn(companyName + " " + companyPrefix);
     }
   }, [companyPrefix, companyName]);
+
+  useEffect(() => {
+    setAddressEn(addressEnLine1 + " " + addressEnLine2);
+  }, [addressEnLine1, addressEnLine2]);
 
   const handleSave = async () => {
     // ✅ 국가 입력 검사
@@ -503,8 +509,14 @@ export function ApplicantSheet({
                     Business address of the company
                   </small>
                   <Input
-                    value={addressEn}
-                    onChange={(e) => setAddressEn(e.target.value)}
+                    value={addressEnLine1}
+                    onChange={(e) => setAddressEnLine1(e.target.value)}
+                    placeholder="Street Address"
+                  />
+                  <Input
+                    value={addressEnLine2}
+                    onChange={(e) => setAddressEnLine2(e.target.value)}
+                    placeholder="City, State, Zip Code"
                   />
                 </div>
 
@@ -911,8 +923,14 @@ export function ApplicantSheet({
                     Full mailing address in English
                   </small>
                   <Input
-                    value={addressEn}
-                    onChange={(e) => setAddressEn(e.target.value)}
+                    value={addressEnLine1}
+                    onChange={(e) => setAddressEnLine1(e.target.value)}
+                    placeholder="Street Address"
+                  />
+                  <Input
+                    value={addressEnLine2}
+                    onChange={(e) => setAddressEnLine2(e.target.value)}
+                    placeholder="City, State, Zip Code"
                   />
                 </div>
                 <div className="flex flex-col gap-1">

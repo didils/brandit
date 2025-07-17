@@ -6,9 +6,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export async function action({ request }: { request: Request }) {
   const body = await request.json();
   console.log("🚀 [body] body in create-checkout-session.tsx", body);
+  const { user_id, items } = body;
+
+  // ✅ 가격 합산
+  const totalAmount = items.reduce((sum: number, item: any) => {
+    return sum + item.amount * item.quantity;
+  }, 0);
 
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: 20000, // 단위: cent
+    amount: totalAmount, // 단위: cent
     currency: "usd",
     automatic_payment_methods: { enabled: true },
     metadata: {

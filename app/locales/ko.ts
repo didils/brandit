@@ -2,8 +2,8 @@ import type { Translation } from "./types";
 
 const ko: Translation = {
   home: {
-    title: "brandit",
-    subtitle: "대한민국 지식재산 플랫폼",
+    title: "iphere",
+    subtitle: "AI helps you to protect your IP in Korea",
   },
   navigation: {
     kr: "한국어",

@@ -7,7 +7,9 @@
  */
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
@@ -237,5 +239,32 @@ export const payments_patents = pgTable("payments_patents", {
   payment_ref: text(),
 
   // 생성일시 및 수정일시
+  ...timestamps,
+});
+
+export const processes_patent_alarms = pgTable("processes_patent_alarms", {
+  // 🔑 bigint 기반 기본키, 자동 증가
+  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+
+  // 🧾 사건 참조 (UUID 기반)
+  process_patent_id: uuid()
+    .notNull()
+    .references(() => processes_patents.id, {
+      onDelete: "cascade",
+    }),
+
+  // ⏰ 알람 종류 (enum-like 문자열, 예: "3_months", "2_weeks")
+  type: text().notNull(),
+
+  // 📅 알람 발송 예정일 (due_date 기준 계산)
+  scheduled_at: date().notNull(),
+
+  // ✅ 실제 발송 여부
+  is_sent: boolean().default(false),
+
+  // 🕒 발송된 시점 (null이면 아직 미발송)
+  sent_at: timestamp(),
+
+  // 📌 생성 및 수정 타임스탬프
   ...timestamps,
 });

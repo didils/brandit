@@ -87,14 +87,16 @@ export default function Home() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2.5">
+    <div className="mt-40 flex flex-col items-center justify-center gap-2.5">
       {/* Main headline with responsive typography */}
-      <h1 className="text-primary text-4xl font-extrabold tracking-tight lg:text-6xl">
+      <h1 className="text-primary text-4xl font-bold tracking-tight lg:text-5xl">
         {t("home.title")}
       </h1>
 
       {/* Subtitle */}
-      <h2 className="text-primary text-2xl">{t("home.subtitle")}</h2>
+      <h2 className="text-primary text-xl font-light tracking-tight">
+        {t("home.subtitle")}
+      </h2>
     </div>
   );
 }

@@ -170,3 +170,37 @@ export async function insertInventor(data: InventorInput) {
   toast.success("Inventor saved");
   return inserted; // ✅ 삽입된 객체 반환
 }
+
+type SubmitPatentPaymentParams = {
+  user_id: string;
+  patent_id: string;
+  process_id: string;
+  amount: number;
+  payment_method: string;
+  payment_ref: string;
+};
+
+// ✅ RPC 호출 함수
+export async function submitPatentPayment(params: SubmitPatentPaymentParams) {
+  const {
+    user_id,
+    patent_id,
+    process_id,
+    amount,
+    payment_method,
+    payment_ref,
+  } = params;
+
+  const { error } = await browserClient.rpc("submit_patent_payment", {
+    _user_id: user_id,
+    _patent_id: patent_id,
+    _process_id: process_id,
+    _amount: amount,
+    _payment_method: payment_method,
+    _payment_ref: payment_ref,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

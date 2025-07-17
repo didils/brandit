@@ -1,10 +1,14 @@
 import type { Route } from "./+types/confirm";
 
-import { CheckoutProvider } from "@stripe/react-stripe-js";
+import {
+  CheckoutProvider,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Loader2, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { redirect } from "react-router";
 
 import CheckoutForm from "~/core/components/checkout-form";
@@ -37,6 +41,9 @@ export const meta: Route.MetaFunction = () => {
 export async function loader({ request, params }: Route.LoaderArgs) {
   const [client] = makeServerClient(request);
   const { patent_id, process_id } = params;
+  console.log("🚀 [loader] params", params);
+  const url = new URL(request.url);
+  const origin = url.origin;
 
   const {
     data: { user },
@@ -75,12 +82,41 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
   //   console.log("🚀 [loader] process", process);
   //   console.log("🚀 [loader] patent", patent);
+  const default_price = 29000; // 29000 cents
+  const urgent_price = 10000; // 10000 cents
+  const final_price = process.is_urgent
+    ? default_price + urgent_price
+    : default_price;
+
+  const items = [
+    {
+      name: "Provisional Patent Filing",
+      amount: final_price,
+      currency: "usd",
+      quantity: 1,
+    },
+  ];
+
+  const sessionResponse = await fetch(
+    `${origin}/applications/provisional-application/api/create-checkout-session`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.id,
+        items,
+      }),
+    },
+  );
+
+  const { client_secret } = await sessionResponse.json();
 
   // 3️⃣ 반환
   return {
     user,
     patent,
     process,
+    client_secret,
   };
 }
 
@@ -97,37 +133,37 @@ stripePromise.then((stripe) => {
   }
 });
 
-async function createCheckoutSession(): Promise<string> {
-  const response = await fetch(
-    "http://localhost:5173/applications/provisional-application/api/create-checkout-session",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: "d09cd8c7-76b5-456d-82e8-64ca6fb99996", // 사용자 UUID
-        items: [
-          {
-            name: "Provisional Patent Filing", // 상품명
-            amount: 99, // 가격 (단위: 원, 정수. Stripe는 원화도 지원)
-            currency: "usd", // 통화 (예: "krw", "usd")
-            quantity: 1, // 수량
-          },
-        ],
-      }),
-    },
-  );
+// async function createCheckoutSession(): Promise<string> {
+//   const response = await fetch(
+//     `${window.location.origin}/applications/provisional-application/api/create-checkout-session`,
+//     {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         user_id: "d09cd8c7-76b5-456d-82e8-64ca6fb99996", // 사용자 UUID
+//         items: [
+//           {
+//             name: "Provisional Patent Filing", // 상품명
+//             amount: 99, // 가격 (단위: 원, 정수. Stripe는 원화도 지원)
+//             currency: "usd", // 통화 (예: "krw", "usd")
+//             quantity: 1, // 수량
+//           },
+//         ],
+//       }),
+//     },
+//   );
 
-  if (!response.ok) {
-    throw new Error("Failed to create checkout session");
-  }
+//   if (!response.ok) {
+//     throw new Error("Failed to create checkout session");
+//   }
 
-  const data = await response.json();
+//   const data = await response.json();
 
-  // 🎯 이 client_secret은 Stripe Elements에서 결제에 사용할 key야
-  return data.client_secret;
-}
+//   // 🎯 이 client_secret은 Stripe Elements에서 결제에 사용할 key야
+//   return data.client_secret;
+// }
 
 export default function Confirm({ loaderData }: Route.ComponentProps) {
   // ✅ publishable key로 stripePromise 만들기
@@ -137,15 +173,23 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
   const { patent, process, user } = loaderData;
   const [isReminderEnabled, setIsReminderEnabled] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  let return_url = "";
 
-  useEffect(() => {
-    const loadSecret = async () => {
-      const secret = await createCheckoutSession();
-      console.log("🎯 [clientSecret from server]", secret); // 여기 반드시 확인
-      setClientSecret(secret);
-    };
-    loadSecret();
-  }, []);
+  if (typeof window !== "undefined") {
+    return_url = `${window.location.origin}/applications/provisional-application/${loaderData.patent.id}/${loaderData.process.id}/success`;
+  }
+
+  // const return_url = `${window.location.origin}/applications/provisional-application/${loaderData.patent.id}/${loaderData.process.id}/success`;
+  // ✅ React Router 프레임워크 모드에선 굳이 FormEvent import 안 해도 됨
+
+  // useEffect(() => {
+  //   const loadSecret = async () => {
+  //     const secret = await createCheckoutSession();
+  //     console.log("🎯 [clientSecret from server]", secret); // 여기 반드시 확인
+  //     setClientSecret(secret);
+  //   };
+  //   loadSecret();
+  // }, []);
   // ✅ 각 버튼 별 개별 상태 관리
   const [threeMonths, setThreeMonths] = useState(false);
   const [twoMonths, setTwoMonths] = useState(false);
@@ -430,16 +474,28 @@ export default function Confirm({ loaderData }: Route.ComponentProps) {
             </Label>
           </div>
           <div className="flex w-full flex-col items-center justify-center gap-2 px-4 py-5">
-            <Button className="w-1/2" disabled={!isConfirmed}>
+            <Button
+              className="w-1/2"
+              disabled={!isConfirmed}
+              // onClick={(e) => handleSubmit(e as any)}
+            >
               Checkout
             </Button>
           </div>
         </div>
         <div className="col-span-2 mx-auto mt-20 w-full max-w-screen-md">
           <div className="flex w-full flex-col items-center justify-center gap-2 px-4 py-5">
-            {clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm />
+            {loaderData.client_secret && (
+              <Elements
+                stripe={stripePromise}
+                options={{ clientSecret: loaderData.client_secret }}
+              >
+                <CheckoutForm
+                  onSuccess={() => {
+                    console.log("✅ 결제 성공");
+                  }}
+                  return_url={return_url}
+                />
               </Elements>
             )}
           </div>

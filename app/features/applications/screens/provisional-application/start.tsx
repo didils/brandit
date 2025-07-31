@@ -38,11 +38,6 @@ import {
   AccordionTrigger,
 } from "~/core/components/ui/accordion";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "~/core/components/ui/alert";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -51,15 +46,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "~/core/components/ui/alert-dialog";
 import { Button } from "~/core/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/core/components/ui/card";
@@ -85,11 +77,6 @@ import {
   SelectValue,
 } from "~/core/components/ui/select";
 import { Separator } from "~/core/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/core/components/ui/tooltip";
 import { browserClient } from "~/core/lib/browser-client";
 import { cn } from "~/core/lib/utils";
 

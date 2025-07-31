@@ -8,8 +8,6 @@ import Stripe from "stripe";
 
 import makeServerClient from "~/core/lib/supa-client.server";
 
-import { submitPatentPayment } from "../../mutations";
-
 export async function loader({ request, params }: Route.LoaderArgs) {
   console.log("🚀 [loader] params in success.tsx", params);
   console.log("🚀 [loader] request in success.tsx", request);

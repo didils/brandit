@@ -19,26 +19,44 @@ export default [
   route("/robots.txt", "core/screens/robots.ts"),
   route("/sitemap.xml", "core/screens/sitemap.ts"),
   layout("core/layouts/private.layout.tsx", { id: "private-application" }, [
-    route(
-      "/applications/provisional-application/start",
-      "features/applications/screens/provisional-application/start.tsx",
-    ),
-    route(
-      "/applications/provisional-application/payment",
-      "features/applications/screens/provisional-application/payment.tsx",
-    ),
-    route(
-      "/applications/provisional-application/:patent_id/:process_id/confirm",
-      "features/applications/screens/provisional-application/confirm.tsx",
-    ),
-    route(
-      "/applications/provisional-application/api/create-checkout-session",
-      "features/applications/api/create-checkout-session.tsx",
-    ),
-    route(
-      "/applications/provisional-application/:patent_id/:process_id/success",
-      "features/applications/screens/provisional-application/success.tsx",
-    ),
+    ...prefix("/applications/provisional-application", [
+      route(
+        "/start",
+        "features/applications/screens/provisional-application/start.tsx",
+      ),
+      route(
+        "/payment",
+        "features/applications/screens/provisional-application/payment.tsx",
+      ),
+      route(
+        "/:patent_id/:process_id/confirm",
+        "features/applications/screens/provisional-application/confirm.tsx",
+      ),
+      route(
+        "/api/create-checkout-session",
+        "features/applications/api/create-checkout-session.tsx",
+      ),
+      route(
+        "/:patent_id/:process_id/success",
+        "features/applications/screens/provisional-application/success.tsx",
+      ),
+    ]),
+    ...prefix("/applications/national-phase", [
+      route("/start", "features/applications/screens/national-phase/start.tsx"),
+      route("/epo", "features/applications/screens/national-phase/epo.tsx"),
+      route(
+        "/payment",
+        "features/applications/screens/national-phase/payment.tsx",
+      ),
+      route(
+        "/:patent_id/:process_id/confirm",
+        "features/applications/screens/national-phase/confirm.tsx",
+      ),
+      route(
+        "/:patent_id/:process_id/success",
+        "features/applications/screens/national-phase/success.tsx",
+      ),
+    ]),
   ]),
   ...prefix("/debug", [
     // You should delete this in production.
@@ -93,10 +111,24 @@ export default [
           ),
         ],
       ),
-      route(
-        "/national-phase",
-        "features/applications/screens/national-phase.tsx",
-      ),
+      layout("features/applications/screens/national-phase/layout.tsx", [
+        route(
+          "/national-phase",
+          "features/applications/screens/national-phase/overview.tsx",
+        ),
+        route(
+          "/national-phase/price",
+          "features/applications/screens/national-phase/price.tsx",
+        ),
+        route(
+          "/national-phase/faq",
+          "features/applications/screens/national-phase/faq.tsx",
+        ),
+        route(
+          "/national-phase/guide",
+          "features/applications/screens/national-phase/guide.tsx",
+        ),
+      ]),
       route(
         "/trademark-application",
         "features/applications/screens/trademark-application.tsx",

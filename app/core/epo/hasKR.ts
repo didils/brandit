@@ -21,6 +21,10 @@ type AppRefGroup = ApplicationReference | ApplicationReference[];
 
 export interface FamilyMember {
   "application-reference"?: AppRefGroup;
+  "exchange-document"?: {
+    "@country"?: string;
+    "@doc-number"?: string;
+  };
 }
 
 interface ApplicationReference {

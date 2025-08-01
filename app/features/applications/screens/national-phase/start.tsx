@@ -5,7 +5,8 @@
  */
 import type { Route } from "../+types/start";
 
-import { CheckIcon, Loader2, XIcon } from "lucide-react";
+import { AlertCircleIcon, CheckIcon, Loader2, XIcon } from "lucide-react";
+import { DateTime } from "luxon";
 import React, {
   type ChangeEvent,
   useEffect,
@@ -30,6 +31,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "~/core/components/ui/accordion";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "~/core/components/ui/alert";
 import { Button } from "~/core/components/ui/button";
 import {
   Card,
@@ -273,7 +279,7 @@ export default function Start({
   const [inventorAddress, setInventorAddress] = useState("");
   const [selectedType, setSelectedType] = useState("applicationNumber");
   const fetcher = useFetcher();
-  console.log("🚀 [actionData] actionData in start.tsx", fetcher.data);
+  console.log("🚀 [actionData] actionData in start.tsx", fetcher.data?.pctInfo);
 
   // 3. placeholder 값 조건부 설정
   const placeholderMap: Record<string, string> = {
@@ -415,16 +421,6 @@ export default function Start({
       );
       el2.setSelectionRange(nextPos, nextPos);
     });
-  };
-
-  /* 커서가 prefix 앞에 못 가게 */
-  const lockCaretBeforePrefix = () => {
-    const el = inputRef.current;
-    if (!el) return;
-    const min = prefix.length;
-    if (el.selectionStart! < min) {
-      el.setSelectionRange(min, min);
-    }
   };
 
   const isExpeditedDisabled = false;
@@ -572,8 +568,6 @@ export default function Start({
                     className="w-full max-w-xl"
                     value={pctApplicationNumber} // 2. input에 state 바인딩
                     onChange={handleChange}
-                    onClick={lockCaretBeforePrefix}
-                    onKeyUp={lockCaretBeforePrefix}
                     maxLength={selectedType === "applicationNumber" ? 17 : 13}
                   />
                   <Button type="submit">Search</Button>
@@ -591,6 +585,123 @@ export default function Start({
                 ) : null}
               </div>
             </fetcher.Form>
+            <div>
+              {fetcher.data?.pctInfo && (
+                <div className="flex flex-col items-start gap-2">
+                  <Alert variant="destructive">
+                    <AlertCircleIcon />
+                    <AlertTitle>
+                      The deadline to enter the KR national phase is{" "}
+                      {/* 31-month deadline (Luxon) */}
+                      {(() => {
+                        const pd = fetcher.data?.pctInfo?.priorityDate; // "YYYY-MM-DD"
+                        if (!pd) return "-";
+
+                        // ISO 문자열 → DateTime  ➜  31개월 후 ➜  사용자의 브라우저 로캘로 표시
+                        return DateTime.fromISO(pd, { zone: "utc" }) // 우선권일
+                          .plus({ months: 31 }) // +31개월
+                          .setLocale(navigator.language) // 현지 로캘
+                          .toLocaleString(DateTime.DATE_MED); // 예: 1 Feb 2025 / 2025. 2. 1.
+                      })()}
+                    </AlertTitle>
+                    <AlertDescription>
+                      <p>
+                        31&nbsp;months after the&nbsp;priority date of&nbsp;
+                        {
+                          DateTime.fromISO(fetcher.data.pctInfo.priorityDate, {
+                            zone: "utc",
+                          }) // "2022-07-01"
+                            .setLocale(navigator.language) // 현지 로캘
+                            .toLocaleString(DateTime.DATE_MED) // 예: 1 Jul 2022 / 2022. 7. 1.
+                        }
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                  <Card className="w-full max-w-xl">
+                    <CardHeader>
+                      <CardTitle>
+                        {fetcher.data.pctInfo.intlApplicationNumber}
+                        <span className="ml-2 text-xs font-light">
+                          filed on {fetcher.data.pctInfo.intlApplicationDate}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2 text-sm">
+                      <p>{fetcher.data.pctInfo.inventionTitle}</p>
+                      <div className="text-muted-foreground gap-2">
+                        <div className="grid w-full grid-cols-3">
+                          <div className="col-span-1">
+                            Publication No.(Date)
+                          </div>
+                          <div className="col-span-2">
+                            {fetcher.data.pctInfo.intlPublicationNumber} (
+                            {fetcher.data.pctInfo.intlPublicationDate})
+                          </div>
+                        </div>
+                        <div className="grid w-full grid-cols-3">
+                          <div className="col-span-1">Applicants</div>
+                          <div className="col-span-2">
+                            <div className="col-span-2 whitespace-pre-line">
+                              {JSON.parse(
+                                fetcher.data?.pctInfo?.applicants ?? "[]",
+                              ).join("\n")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid w-full grid-cols-3">
+                          <div className="col-span-1">Inventors</div>
+                          <div className="col-span-2">
+                            <div className="col-span-2 whitespace-pre-line">
+                              {JSON.parse(
+                                fetcher.data?.pctInfo?.inventors ?? "[]",
+                              ).join("\n")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid w-full grid-cols-3">
+                          <div className="col-span-1">Priority Claims</div>
+                          {/* 번호 (날짜) 형태로 변환해 개행 표시 */}
+                          <div className="col-span-2 whitespace-pre-line">
+                            {JSON.parse(
+                              fetcher.data?.pctInfo?.priorityApplications ??
+                                "[]",
+                            )
+                              .map(
+                                (p: { number: string; date: string }) =>
+                                  `${p.number} (${p.date})`,
+                              )
+                              .join("\n")}
+                          </div>
+                        </div>
+                        <div className="grid w-full grid-cols-3">
+                          <div className="col-span-1">
+                            Earliest Priority Date
+                          </div>
+                          <div className="col-span-2">
+                            {fetcher.data.pctInfo.priorityDate}
+                          </div>
+                        </div>
+                        <div className="grid w-full grid-cols-3">
+                          {/* 31개월 국내단계 마감일 */}
+                          <div className="col-span-1">31-Month Deadline</div>
+                          <div className="col-span-2">
+                            {(() => {
+                              const pd = fetcher.data?.pctInfo?.priorityDate; // "YYYY-MM-DD"
+                              if (!pd) return "-";
+
+                              const date = new Date(pd);
+                              date.setMonth(date.getMonth() + 31); // 31 개월 더하기
+                              return date.toISOString().slice(0, 10); // "YYYY-MM-DD"
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      <p>{fetcher.data.pctInfo.abstractText}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
             <div className="flex flex-col items-start">
               <Label
                 htmlFor="file"

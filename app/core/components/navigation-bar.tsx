@@ -357,7 +357,7 @@ export function NavigationBar({
                   <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
                 </Link>
                 <NavigationMenuContent className="p-3">
-                  <ul className="grid gap-x-2 gap-y-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <ul className="grid gap-x-2 gap-y-2 md:w-[400px] lg:w-[600px] lg:grid-cols-[.65fr_1fr]">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
                         <Link
@@ -428,11 +428,11 @@ export function NavigationBar({
                           {menu.items?.map((item) => (
                             <NavigationMenuItem
                               key={item.name}
-                              className="focus:bg-accent/50 hover:bg-accent/50 rounded-md transition-colors select-none"
+                              className="rounded-md transition-colors select-none"
                             >
                               <NavigationMenuLink asChild>
                                 <Link
-                                  className="block space-y-1 p-3 leading-none no-underline outline-none"
+                                  className="hover:bg-accent/50 focus:bg-accent/50 block space-y-1 p-3 leading-none no-underline outline-none"
                                   to={item.to}
                                 >
                                   <span className="text-sm leading-none font-medium">

@@ -83,6 +83,9 @@ export default [
     ...prefix("/cron", [route("/mailer", "features/cron/api/mailer.tsx")]),
     ...prefix("/blog", [route("/og", "features/blog/api/og.tsx")]),
     route("/send-poa-email", "features/applications/api/send-poa-email.tsx"),
+    ...prefix("/payments", [
+      route("/stripe/webhook", "features/payments/api/stripe-webhook.ts"),
+    ]),
   ]),
 
   layout("core/layouts/navigation.layout.tsx", [
@@ -194,6 +197,12 @@ export default [
           "features/applications/screens/provisional.tsx",
         ),
       ]),
+      ...prefix("/maintenance", [
+        route(
+          "/annuity-management",
+          "features/maintenance/screens/annuity-management.tsx",
+        ),
+      ]),
       route("/account/edit", "features/users/screens/account.tsx"),
     ]),
   ]),
@@ -202,6 +211,7 @@ export default [
   layout("features/blog/layouts/blog.layout.tsx", [
     ...prefix("/blog", [
       index("features/blog/screens/posts.tsx"),
+      route("/new", "features/blog/screens/new.tsx"),
       route("/:slug", "features/blog/screens/post.tsx"),
     ]),
   ]),

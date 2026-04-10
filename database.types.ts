@@ -14,6 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      annuity_cases: {
+        Row: {
+          applicant: string | null
+          application_date: string | null
+          application_no: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          ip_type: Database["public"]["Enums"]["ip_type"]
+          notes: string | null
+          registration_date: string | null
+          registration_no: string
+          status: Database["public"]["Enums"]["annuity_case_status"]
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applicant?: string | null
+          application_date?: string | null
+          application_no?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          ip_type: Database["public"]["Enums"]["ip_type"]
+          notes?: string | null
+          registration_date?: string | null
+          registration_no: string
+          status?: Database["public"]["Enums"]["annuity_case_status"]
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applicant?: string | null
+          application_date?: string | null
+          application_no?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          ip_type?: Database["public"]["Enums"]["ip_type"]
+          notes?: string | null
+          registration_date?: string | null
+          registration_no?: string
+          status?: Database["public"]["Enums"]["annuity_case_status"]
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annuity_cases_user_id_users_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      annuity_payments: {
+        Row: {
+          annuity_year: number
+          case_id: string
+          created_at: string
+          due_date: string
+          fee: number | null
+          id: string
+          is_paid: boolean
+          notes: string | null
+          paid_date: string | null
+          payment_method: string | null
+          payment_ref: string | null
+          payment_status: Database["public"]["Enums"]["annuity_payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annuity_year: number
+          case_id: string
+          created_at?: string
+          due_date: string
+          fee?: number | null
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          payment_status?: Database["public"]["Enums"]["annuity_payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annuity_year?: number
+          case_id?: string
+          created_at?: string
+          due_date?: string
+          fee?: number | null
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          payment_status?: Database["public"]["Enums"]["annuity_payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annuity_payments_case_id_annuity_cases_id_fk"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "annuity_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annuity_payments_user_id_users_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       entities: {
         Row: {
           address_en: string | null
@@ -609,6 +734,9 @@ export type Database = {
       }
     }
     Enums: {
+      annuity_case_status: "active" | "lapsed" | "abandoned"
+      annuity_payment_status: "unpaid" | "paid" | "overdue" | "waived"
+      ip_type: "patent" | "design"
       yes_no: "예" | "아니오"
     }
     CompositeTypes: {

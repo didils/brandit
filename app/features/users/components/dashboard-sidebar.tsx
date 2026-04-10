@@ -4,6 +4,7 @@ import {
   BotIcon,
   BriefcaseIcon,
   BuildingIcon,
+  CalendarClockIcon,
   CommandIcon,
   EarthIcon,
   FilePenLineIcon,
@@ -173,6 +174,11 @@ const data = {
       name: "Design Applications",
       url: "#",
       icon: PenToolIcon,
+    },
+    {
+      name: "연차료 관리",
+      url: "/maintenance/annuity-management",
+      icon: CalendarClockIcon,
     },
   ],
 };

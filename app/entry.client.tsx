@@ -26,6 +26,7 @@ import i18n from "./i18n";
 import en from "./locales/en";
 import es from "./locales/es";
 import ko from "./locales/ko";
+import zh from "./locales/zh";
 
 /**
  * Hydration function for client-side initialization
@@ -78,6 +79,9 @@ async function hydrate() {
         },
         ko: {
           common: ko, // Korean translations
+        },
+        zh: {
+          common: zh, // Chinese translations
         },
       },
     });
